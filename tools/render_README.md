@@ -14,3 +14,9 @@
  "src":"증시 10/15 마감 · ... · 정보 제공용"}
 ```
 dir: up/down/flat. 확인 불가 값은 v:"확인 불가", c:"-", dir:"flat". 나스닥100 num 은 숫자(종가).
+
+# 메일 본문 생성기
+
+`python3 -I tools/mail_html.py 입력.json 출력폴더 [이미지주소]` → `mail.html`(Gmail htmlBody), `mail.txt`(일반 텍스트 body).
+입력 JSON은 위와 같고 `"greeting":"인사말 한 줄"`을 더한다. 이미지 없이 표로 소식지를 그린다
+(Gmail 도구가 외부 `<img>`와 style의 `background:` 줄임 표기를 지우므로 `bgcolor`/`background-color`만 쓴다).

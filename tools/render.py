@@ -31,6 +31,7 @@ td.g{color:#fff;text-align:center;font-size:34px;width:140px}
 td.g1{background:#12294d}td.g2{background:#0e6b4f}td.g3{background:#7a4a12}
 td.n{text-align:left;font-weight:700;background:#fff;font-size:38px}
 td.v{background:#fff;font-size:46px}
+td.fx{text-align:right;background:#fff;font-size:44px}
 td.u{background:#fbc9cc;color:#c8102e;width:250px;font-size:42px}
 td.d{background:#c3d8f8;color:#1553b0;width:250px;font-size:42px}
 td.f{background:#e6ebf5;color:#6e7887;width:250px;font-size:36px}
@@ -51,11 +52,29 @@ tr.sp td{height:16px;padding:0;background:#fff;border:0}
 def esc(t): return html.escape(str(t)).replace("\n", "<br>")
 
 
-def cell(r):
+FX = {"usd": "1달러", "jpy": "100엔"}
+TAGS = {"quote": "오늘의 명언", "medical": "의료계 소식", "news": "중요 경제기사", "schedule": "오늘의 주요 일정",
+        "policy": "개원가·의료 정책", "calendar": "병·의원 경영 달력", "health": "계절 건강", "term": "쉬운 금융 용어"}
+
+
+def corner_tag(c):
+    """코너 꼬리표. "tag"가 있으면 그대로, 없으면 type 으로 정한다."""
+    if c.get("tag"): return c["tag"]
+    name = TAGS[c["type"]]
+    return name if c["type"] == "quote" else f"오늘의 코너 · {name}"
+
+
+def fx_change(r):
+    """환율 변동폭: ▲1.00원 처럼 화살표와 원 단위를 붙인다."""
+    c = r["c"]
+    return c if c in ("-", "") or c.endswith("원") else c + "원"
+
+
+def cell(r, fx=False):
     d = r.get("dir", "flat")
-    arrow = {"up": "▲ ", "down": "▼ ", "flat": ""}[d]
+    arrow = {"up": "▲", "down": "▼", "flat": ""}[d] + ("" if fx or d == "flat" else " ")
     cls = {"up": "u", "down": "d", "flat": "f"}[d]
-    return f'<td class="{cls}">{arrow}{esc(r["c"])}</td>'
+    return f'<td class="{cls}">{arrow}{esc(fx_change(r) if fx else r["c"])}</td>'
 
 
 def load_csv():
@@ -99,9 +118,9 @@ def chart_svg(rows, last_label, last_date, H):
 def corner_html(c):
     t = c["type"]
     if t == "quote":
-        return (f'<div class="corner"><span class="tag">오늘의 명언</span><div class="quote">“{esc(c["quote"])}”</div>'
+        return (f'<div class="corner"><span class="tag">{esc(corner_tag(c))}</span><div class="quote">“{esc(c["quote"])}”</div>'
                 f'<div class="who">— {esc(c["who"])}</div><div class="close">{esc(c["close"])}</div></div>')
-    tag = {"medical": "오늘의 코너 · 의료계 소식", "news": "오늘의 코너 · 중요 경제기사"}[t]
+    tag = esc(corner_tag(c))
     li = "".join(f'<li><b>{esc(i["h"])}</b> — {esc(i["b"])}</li>' for i in c["items"])
     close = f'<div class="close">{esc(c["close"])}</div>' if c.get("close") else ""
     return f'<div class="corner"><span class="tag">{tag}</span><ul>{li}</ul>{close}</div>'
@@ -116,11 +135,13 @@ def build_html(d, rows, H):
     def tr(label, key, g=None, span=1, sp=False):
         x = r[key]
         gcell = f'<td class="g {g}" rowspan="{span}">{label[0]}</td>' if g else ""
+        if key in FX:
+            return f'<tr>{gcell}<td class="fx" colspan="2">{esc(FX[key])}={esc(x["v"])}</td>{cell(x, fx=True)}</tr>'
         return f'<tr>{gcell}<td class="n">{esc(label[1])}</td><td class="v">{esc(x["v"])}</td>{cell(x)}</tr>'
     spacer = '<tr class="sp"><td colspan="4"></td></tr>'
     table = ("<table><tr><th>구분</th><th>지표</th><th>종가</th><th>전일 대비</th></tr>"
              + tr(("증시", "코스피"), "kospi", "g1", 2) + tr(("", "나스닥100"), "ndx") + spacer
-             + tr(("환율", "달러 (1달러)"), "usd", "g2", 2) + tr(("", "엔 (100엔)"), "jpy") + spacer
+             + tr(("환율", ""), "usd", "g2", 2) + tr(("", ""), "jpy") + spacer
              + tr(("유가", "WTI"), "wti", "g3", 1) + "</table>")
     sub_html = f'<div class="sub">{esc(d["subtitle"])}</div>' if d.get("subtitle") else ""
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">'

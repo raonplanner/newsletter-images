@@ -12,9 +12,27 @@ NAVY, GREEN, BROWN, RED = "#12294d", "#0e6b4f", "#7a4a12", "#c8102e"
 DIR = {"up": ("▲ ", "#fbc9cc", RED), "down": ("▼ ", "#c3d8f8", "#1553b0"), "flat": ("", "#e6ebf5", "#6e7887")}
 CONSULT = "https://brand.metlife.co.kr/bo/prps/selectMoblieCert.do?fccd=00323294"
 ROWS = [("증시", NAVY, [("코스피", "kospi"), ("나스닥100", "ndx")]),
-        ("환율", GREEN, [("달러 (1달러)", "usd"), ("엔 (100엔)", "jpy")]),
+        ("환율", GREEN, [("1달러", "usd"), ("100엔", "jpy")]),
         ("유가", BROWN, [("WTI", "wti")])]
-TAGS = {"medical": "오늘의 코너 · 의료계 소식", "news": "오늘의 코너 · 중요 경제기사", "quote": "오늘의 명언"}
+FX = ("usd", "jpy")
+TAGS = {"quote": "오늘의 명언", "medical": "의료계 소식", "news": "중요 경제기사", "schedule": "오늘의 주요 일정",
+        "policy": "개원가·의료 정책", "calendar": "병·의원 경영 달력", "health": "계절 건강", "term": "쉬운 금융 용어"}
+
+
+def corner_tag(c):
+    """코너 꼬리표. "tag"가 있으면 그대로, 없으면 type 으로 정한다."""
+    if c.get("tag"): return c["tag"]
+    name = TAGS[c["type"]]
+    return name if c["type"] == "quote" else f"오늘의 코너 · {name}"
+
+
+def change(key, x):
+    """전일 대비 문구. 환율은 '▲1.00원', 그 밖은 '▲ 3.52%'."""
+    arrow = DIR[x.get("dir", "flat")][0].strip()
+    c = x["c"]
+    if key in FX:
+        return arrow + (c if c in ("-", "") or c.endswith("원") else c + "원")
+    return f"{arrow} {c}" if arrow else c
 
 
 def esc(t): return html.escape(str(t))
@@ -31,22 +49,27 @@ def table_html(r):
         last_group = gi == len(ROWS) - 1
         for i, (name, key) in enumerate(items):
             x = r[key]
-            arrow, cbg, cfg = DIR[x.get("dir", "flat")]
+            _, cbg, cfg = DIR[x.get("dir", "flat")]
             line = "" if last_group and i == len(items) - 1 else (
                 "border-bottom:2px solid #ffffff" if i == len(items) - 1 else "border-bottom:1px solid #e6ebf5")
             g = (f'<td rowspan="{len(items)}" {bg(color)}color:#ffffff;text-align:center;font-weight:bold;padding:8px;'
                  f'border-bottom:2px solid #ffffff">{group}</td>') if i == 0 else ""
-            out.append(f'<tr>{g}<td style="padding:8px;font-weight:bold;{line}">{esc(name)}</td>'
-                       f'<td style="padding:8px;text-align:right;font-weight:bold;font-size:18px;{line}">{esc(x["v"])}</td>'
+            if key in FX:
+                val = (f'<td colspan="2" style="padding:8px;text-align:right;font-weight:bold;font-size:18px;{line}">'
+                       f'{esc(name)}={esc(x["v"])}</td>')
+            else:
+                val = (f'<td style="padding:8px;font-weight:bold;{line}">{esc(name)}</td>'
+                       f'<td style="padding:8px;text-align:right;font-weight:bold;font-size:18px;{line}">{esc(x["v"])}</td>')
+            out.append(f'<tr>{g}{val}'
                        f'<td {bg(cbg)}padding:8px;text-align:center;font-weight:bold;color:{cfg};border-bottom:2px solid #ffffff">'
-                       f'{arrow}{esc(x["c"])}</td></tr>')
+                       f'{esc(change(key, x))}</td></tr>')
     return ('<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:10px;font-size:16px">'
             + "\n".join(out) + "</table>")
 
 
 def corner_html(c):
     tag = (f'<div style="text-align:center"><span style="display:inline-block;background-color:{RED};color:#ffffff;'
-           f'font-size:13px;font-weight:bold;padding:3px 12px;border-radius:12px">{TAGS[c["type"]]}</span></div>')
+           f'font-size:13px;font-weight:bold;padding:3px 12px;border-radius:12px">{esc(corner_tag(c))}</span></div>')
     if c["type"] == "quote":
         body = (f'<p style="margin:10px 0 4px;font-size:16px;line-height:1.5;text-align:center;color:{NAVY};font-weight:bold">'
                 f'“{esc(c["quote"])}”</p><p style="margin:4px 0;font-size:14px;text-align:center;color:#4a5568">— {esc(c["who"])}</p>')
@@ -63,7 +86,9 @@ def corner_text(c):
     else:
         lines = [f'· {i["h"]} — {i["b"]}' for i in c["items"]]
     if c.get("close"): lines.append(c["close"])
-    return f'■ {TAGS[c["type"]].replace("오늘의 코너 · ", "오늘의 코너(")}{")" if c["type"] != "quote" else ""}\n' + "\n".join(lines)
+    tag = corner_tag(c)
+    if tag.startswith("오늘의 코너 · "): tag = f"오늘의 코너({tag[len('오늘의 코너 · '):]})"
+    return f'■ {tag}\n' + "\n".join(lines)
 
 
 def text_rows(r):
@@ -72,9 +97,12 @@ def text_rows(r):
     for _, _, items in ROWS:
         for name, key in items:
             x = r[key]
+            if key in FX:
+                out.append(f'{name}={x["v"]} {change(key, x)}')
+                continue
             arrow = DIR[x.get("dir", "flat")][0].strip()
             c = x["c"] if x["c"].endswith("%") or x["c"] == "-" else x["c"] + unit[key]
-            out.append(f'{name.replace(" (1달러)", "").replace("달러", "원/달러") if key == "usd" else name} {x["v"]} ({arrow}{c})')
+            out.append(f'{name} {x["v"]} ({arrow}{c})')
     return "\n".join(out)
 
 

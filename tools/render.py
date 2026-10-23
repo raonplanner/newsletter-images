@@ -20,6 +20,7 @@ body{width:1080px;height:1350px;font-family:"Noto Sans CJK KR",sans-serif;backgr
 header{background:#12294d;color:#fff;padding:22px 40px 18px;display:flex;justify-content:space-between;align-items:flex-end}
 header .date{font-size:26px;color:#c9d6ee}
 header h1{font-size:50px;font-weight:700;margin-top:4px}
+header .sub{font-size:28px;font-weight:700;color:#ffd666;margin-top:6px}
 header .me{text-align:right;font-size:23px;line-height:1.5;color:#c9d6ee}
 header .me b{color:#fff;font-size:30px}
 main{flex:1;padding:18px 40px 0}
@@ -121,8 +122,9 @@ def build_html(d, rows, H):
              + tr(("증시", "코스피"), "kospi", "g1", 2) + tr(("", "나스닥100"), "ndx") + spacer
              + tr(("환율", "달러 (1달러)"), "usd", "g2", 2) + tr(("", "엔 (100엔)"), "jpy") + spacer
              + tr(("유가", "WTI"), "wti", "g3", 1) + "</table>")
+    sub_html = f'<div class="sub">{esc(d["subtitle"])}</div>' if d.get("subtitle") else ""
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">'
-            f'<header><div><div class="date">{esc(d["date_label"])} · 전일 마감 기준</div><h1>오늘의 소식지</h1></div>'
+            f'<header><div><div class="date">{esc(d["date_label"])} · 전일 마감 기준</div><h1>오늘의 소식지</h1>{sub_html}</div>'
             f'<div class="me"><b>송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점<br>m. 010-3224-1517 · t. 042-331-0936</div></header>'
             f'<main>{table}<div class="chart"><div class="ct">나스닥100 상장 이후 추이 (월말 종가, 로그 눈금)</div>{svg}</div>'
             f'{corner_html(d["corner"])}</main><div class="src">{esc(d["src"])}</div></div></body></html>')

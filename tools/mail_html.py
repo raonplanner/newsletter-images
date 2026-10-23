@@ -83,9 +83,11 @@ def main():
     img = sys.argv[3] if len(sys.argv) > 3 else ""
     d = json.load(open(inp, encoding="utf8"))
     os.makedirs(out, exist_ok=True)
+    sub_html = (f'<div style="font-size:15px;font-weight:bold;margin-top:4px;color:#ffd666">{esc(d["subtitle"])}</div>'
+                if d.get("subtitle") else "")
     head = (f'<table width="100%" cellpadding="0" cellspacing="0" {bg(NAVY)}border-collapse:collapse;color:#ffffff">'
             f'<tr><td {bg(NAVY)}padding:14px 18px"><div style="font-size:13px;color:#c9d6ee">{esc(d["date_label"])} · 전일 마감 기준</div>'
-            f'<div style="font-size:26px;font-weight:bold;margin-top:2px;color:#ffffff">오늘의 소식지</div></td>'
+            f'<div style="font-size:26px;font-weight:bold;margin-top:2px;color:#ffffff">오늘의 소식지</div>{sub_html}</td>'
             f'<td {bg(NAVY)}padding:14px 18px;text-align:right;font-size:12px;color:#c9d6ee;line-height:1.5">'
             f'<b style="font-size:15px;color:#ffffff">송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점<br>m. 010-3224-1517</td></tr></table>')
     link = (f'<p style="font-size:14px;margin:4px 0"><a href="{esc(img)}">소식지 이미지(나스닥100 장기 추이 차트 포함) 크게 보기</a></p>'
@@ -95,7 +97,7 @@ def main():
             f'<p style="font-size:14px;margin:14px 0 4px">{esc(d["greeting"])}</p>{link}'
             f'<p style="font-size:14px;margin:10px 0 4px">상담 문의 010-3224-1517<br>상담 신청 <a href="{CONSULT}">{CONSULT}</a></p>'
             f'<p style="font-size:11px;color:#6a7587;margin-top:10px">{esc(d["src"])}<br>※ 본 자료는 정보 제공용입니다.</p></div>')
-    text = (f'오늘의 소식지 {d["date_label"]} (전일 마감 기준)\n\n{d["greeting"]}\n\n■ 전일 주요 경제동향\n{text_rows(d["rows"])}\n\n'
+    text = (f'오늘의 소식지 {d["date_label"]} (전일 마감 기준)\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{d["greeting"]}\n\n■ 전일 주요 경제동향\n{text_rows(d["rows"])}\n\n'
             f'{corner_text(d["corner"])}\n\n' + (f"소식지 이미지: {img}\n\n" if img else "")
             + f'상담 문의 010-3224-1517\n상담 신청 {CONSULT}\n\n※ 본 자료는 정보 제공용입니다.\n')
     open(os.path.join(out, "mail.html"), "w", encoding="utf8").write(page)

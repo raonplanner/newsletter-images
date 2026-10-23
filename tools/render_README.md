@@ -3,7 +3,7 @@
 `python3 -I tools/render.py 입력.json 출력폴더` → `post.png`(페이스북용), `mail.png`(메일 첨부용, base64 28,000자 이하).
 `data/ndx_monthly.csv`(나스닥100 월말 종가, 1985.10~)의 해당 월 값을 그날 종가로 갱신한다.
 
-입력 JSON:
+입력 JSON (선택 항목 `"subtitle":"그날의 한 줄 부제"` — 있으면 제목 아래에 표시, 없으면 생략):
 ```
 {"date_label":"2026년 10월 16일 금요일",
  "rows":{"kospi":{"v":"5,554.22","c":"7.57%","dir":"down"},

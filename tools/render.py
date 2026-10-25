@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """소식지 이미지 생성기.
 사용: python3 -I tools/render.py 입력.json 출력폴더
-출력: 출력폴더/post.png (페이스북용 1080x1350 원본), mail.png (메일 첨부용, base64 28,000자 이하), 요약은 stdout.
+출력: 출력폴더/post.png (인스타 1장, 1080x1350 원본), mail.png (메일 첨부용, base64 28,000자 이하), 요약은 stdout.
 입력 JSON 형식은 tools/README.md 참고. data/ndx_monthly.csv 의 해당 월 값을 갱신(upsert)한다.
 """
 import sys, os, json, csv, math, base64, html
@@ -19,7 +19,7 @@ body{width:1080px;height:1350px;font-family:"Noto Sans CJK KR",sans-serif;backgr
 .wrap{width:1080px;height:1350px;display:flex;flex-direction:column}
 header{background:#12294d;color:#fff;padding:22px 40px 18px;display:flex;justify-content:space-between;align-items:flex-end}
 header .date{font-size:26px;color:#c9d6ee}
-header h1{font-size:50px;font-weight:700;margin-top:4px}
+header h1{font-size:50px;font-weight:700;margin-top:4px}header h1 .ttl{font-size:28px;color:#ffd666;margin-left:8px}
 header .sub{font-size:28px;font-weight:700;color:#ffd666;margin-top:6px}
 header .me{text-align:right;font-size:23px;line-height:1.5;color:#c9d6ee}
 header .me b{color:#fff;font-size:30px}
@@ -38,7 +38,7 @@ td.f{background:#e6ebf5;color:#6e7887;width:250px;font-size:36px}
 tr.sp td{height:16px;padding:0;background:#fff;border:0}
 .chart{margin-top:16px;border:3px solid #12294d;border-radius:14px;padding:8px 18px 6px}
 .ct{font-size:26px;font-weight:700;color:#12294d}
-.corner{margin-top:16px;border:3px solid #12294d;border-radius:14px;padding:14px 24px 12px;text-align:center}
+.corner{margin-top:0;margin-bottom:16px;border:3px solid #12294d;border-radius:14px;padding:14px 24px 12px;text-align:center}
 .corner .tag{display:inline-block;background:#c8102e;color:#fff;font-size:24px;font-weight:700;padding:4px 16px;border-radius:20px}
 .corner .quote{font-size:32px;line-height:1.45;color:#12294d;font-weight:700;margin-top:12px}
 .corner .who{font-size:26px;color:#4a5568;margin-top:6px}
@@ -70,11 +70,11 @@ def fx_change(r):
     return c if c in ("-", "") or c.endswith("원") else c + "원"
 
 
-def cell(r, fx=False):
+def cell(r, fx=False, unit=""):
     d = r.get("dir", "flat")
     arrow = {"up": "▲", "down": "▼", "flat": ""}[d] + ("" if fx or d == "flat" else " ")
     cls = {"up": "u", "down": "d", "flat": "f"}[d]
-    return f'<td class="{cls}">{arrow}{esc(fx_change(r) if fx else r["c"])}</td>'
+    return f'<td class="{cls}">{arrow}{esc(fx_change(r) if fx else (r["c"] + unit if unit and not r["c"].endswith(unit) and r["c"] not in ("-", "") else r["c"]))}</td>'
 
 
 def load_csv():
@@ -137,18 +137,17 @@ def build_html(d, rows, H):
         gcell = f'<td class="g {g}" rowspan="{span}">{label[0]}</td>' if g else ""
         if key in FX:
             return f'<tr>{gcell}<td class="fx" colspan="2">{esc(FX[key])}={esc(x["v"])}</td>{cell(x, fx=True)}</tr>'
-        return f'<tr>{gcell}<td class="n">{esc(label[1])}</td><td class="v">{esc(x["v"])}</td>{cell(x)}</tr>'
+        return f'<tr>{gcell}<td class="n">{esc(label[1])}</td><td class="v">{esc(x["v"])}</td>{cell(x, unit="달러" if key == "wti" else "")}</tr>'
     spacer = '<tr class="sp"><td colspan="4"></td></tr>'
-    table = ("<table><tr><th>구분</th><th>지표</th><th>종가</th><th>전일 대비</th></tr>"
+    table = ("<table><tr><th>구분</th><th>지표</th><th>종가</th><th>직전 거래일 대비</th></tr>"
              + tr(("증시", "코스피"), "kospi", "g1", 2) + tr(("", "나스닥100"), "ndx") + spacer
-             + tr(("환율", ""), "usd", "g2", 2) + tr(("", ""), "jpy") + spacer
-             + tr(("유가", "WTI"), "wti", "g3", 1) + "</table>")
+             + tr(("환율", ""), "usd", "g2", 2) + tr(("", ""), "jpy") + ((spacer + tr(("유가", "국제유가"), "wti", "g3", 1)) if "wti" in r else "") + "</table>")
     sub_html = f'<div class="sub">{esc(d["subtitle"])}</div>' if d.get("subtitle") else ""
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">'
-            f'<header><div><div class="date">{esc(d["date_label"])} · 전일 마감 기준</div><h1>오늘의 소식지</h1>{sub_html}</div>'
-            f'<div class="me"><b>송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점<br>m. 010-3224-1517 · t. 042-331-0936</div></header>'
-            f'<main>{table}<div class="chart"><div class="ct">나스닥100 상장 이후 추이 (월말 종가, 로그 눈금)</div>{svg}</div>'
-            f'{corner_html(d["corner"])}</main><div class="src">{esc(d["src"])}</div></div></body></html>')
+            f'<header><div><div class="date">{esc(d["date_label"])} · 직전 거래일 종가 기준</div><h1>오늘의 소식지 <span class="ttl">[해외주식 비과세]</span></h1>{sub_html}</div>'
+            f'<div class="me"><b>송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점<br>m. 010-3224-1517</div></header>'
+            f'<main>{corner_html(d["corner"])}{table}<div class="chart"><div class="ct">나스닥100 상장 이후 추이 (월말 종가, 로그 눈금)</div>{svg}</div>'
+            f'</main><div class="src">{esc(d["src"])}</div></div></body></html>')
 
 
 def quantize(im):

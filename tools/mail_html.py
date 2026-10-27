@@ -148,7 +148,7 @@ def markets_html(d):
     return (f'<div style="margin-top:12px;border-top:2px solid {NAVY};padding-top:8px"><b style="color:{NAVY};font-size:15px">직전 거래일 종가</b>'
             + "".join(rows)
             + f'<p style="margin:8px 0 2px;font-size:14px;font-weight:bold">{gtxt}</p>'
-            f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC} 그래프는 첨부 이미지를 확인해 주세요.</p></div>')
+            f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC}{" 그래프는 첨부 이미지를 확인해 주세요." if gl else ""}</p></div>')
 
 
 def markets_text(d):
@@ -158,8 +158,9 @@ def markets_text(d):
         else:
             c, p, _, ar = v
             out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
-    out.append(growth_line(d) or "10년 성장 추이 확인 불가")
-    out.append(DISC + " 그래프는 첨부 이미지를 확인해 주세요.")
+    gl = growth_line(d)
+    out.append(gl or "10년 성장 추이 확인 불가")
+    out.append(DISC + (" 그래프는 첨부 이미지를 확인해 주세요." if gl else ""))
     return "\n".join(out) + "\n\n"
 
 

@@ -141,7 +141,7 @@ def build_html(d, rows, H):
     spacer = '<tr class="sp"><td colspan="4"></td></tr>'
     table = ("<table><tr><th>구분</th><th>지표</th><th>종가</th><th>직전 거래일 대비</th></tr>"
              + tr(("증시", "코스피"), "kospi", "g1", 2) + tr(("", "나스닥100"), "ndx") + spacer
-             + tr(("환율", ""), "usd", "g2", 2) + tr(("", ""), "jpy") + ((spacer + tr(("유가", "국제유가"), "wti", "g3", 1)) if "wti" in r else "") + "</table>")
+             + tr(("환율", ""), "usd", "g2", 2 if "jpy" in r else 1) + (tr(("", ""), "jpy") if "jpy" in r else "") +((spacer + tr(("유가", "국제유가"), "wti", "g3", 1)) if "wti" in r else "") + "</table>")
     sub_html = f'<div class="sub">{esc(d["subtitle"])}</div>' if d.get("subtitle") else ""
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">'
             f'<header><div><div class="date">{esc(d["date_label"])} · 직전 거래일 종가 기준</div><h1>오늘의 소식지 <span class="ttl">[해외주식 비과세]</span></h1>{sub_html}</div>'

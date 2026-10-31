@@ -27,8 +27,8 @@ def basis_text(d):
     """맨 위 기준 문구. kr_date/us_date(예 '10/30','10/29')가 있으면 날짜를 밝힌다."""
     kr, us = d.get("kr_date"), d.get("us_date")
     parts = []
-    if kr: parts.append(f"코스피·환율 {kr} 종가")
-    if us: parts.append(f"미국 증시 {us} 종가")
+    if kr: parts.append(f"코스피·환율 {kr} " + ("휴장" if d.get("kr_closed") else "종가"))
+    if us: parts.append(f"미국 증시 {us} " + ("휴장" if d.get("us_closed") else "종가"))
     return (" · ".join(parts) + " 기준") if parts else "직전 거래일 종가 기준"
 
 
@@ -43,6 +43,7 @@ def main():
     N = gr["nasdaq100"][-1] if gr else None
     for k in ("global_tech", "nasdaq100"):
         m = mk.get(k) or {}
+        if m.get("closed"): continue
         if m.get("close") is None or m.get("day_pct") is None:
             raise SystemExit("펀드 종가 자료가 없어 post2.png를 만들지 않는다(빈 칸·확인 불가 표기 금지).")
     if G is None or N is None:
@@ -60,6 +61,8 @@ def main():
         bg.add_patch(FancyBboxPatch((40, y), 1000, 92, boxstyle="round,pad=0,rounding_size=14", fc="#f3f5fa", ec="none"))
         bg.text(70, y + 46, name, fontsize=27, va="center")
         m = mk.get(key) or {}
+        if m.get("closed"):
+            bg.text(1010, y + 46, "휴장", fontsize=30, fontweight="bold", color="#555", va="center", ha="right"); continue
         if m.get("close") is None or m.get("day_pct") is None:
             bg.text(1010, y + 46, "확인 불가", fontsize=26, color="#777", va="center", ha="right"); continue
         pct = float(m["day_pct"]); col = R if pct > 0 else (B if pct < 0 else "#555")

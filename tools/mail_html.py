@@ -56,6 +56,15 @@ def table_html(r):
                 "border-bottom:2px solid #ffffff" if i == len(items) - 1 else "border-bottom:1px solid #e6ebf5")
             g = (f'<td rowspan="{len(items)}" {bg(color)}color:#ffffff;text-align:center;font-weight:bold;padding:8px;'
                  f'border-bottom:2px solid #ffffff">{group}</td>') if i == 0 else ""
+            if x.get("closed"):
+                if key in FX:
+                    val = (f'<td colspan="2" style="padding:8px;text-align:right;font-weight:bold;font-size:18px;{line}">'
+                           f'{esc(name)} 휴장</td>')
+                else:
+                    val = (f'<td style="padding:8px;font-weight:bold;{line}">{esc(name)}</td>'
+                           f'<td style="padding:8px;text-align:right;font-weight:bold;font-size:18px;{line}">휴장</td>')
+                out.append(f'<tr>{g}{val}<td {bg("#e6ebf5")}padding:8px;text-align:center;font-weight:bold;color:#6e7887;border-bottom:2px solid #ffffff">-</td></tr>')
+                continue
             if key in FX:
                 val = (f'<td colspan="2" style="padding:8px;text-align:right;font-weight:bold;font-size:18px;{line}">'
                        f'{esc(name)}={esc(x["v"])}</td>')
@@ -100,6 +109,9 @@ def text_rows(r):
         for name, key in items:
             if key not in r: continue
             x = r[key]
+            if x.get("closed"):
+                out.append(f'{name} 휴장' if key not in FX else f'{name} 휴장')
+                continue
             if key in FX:
                 out.append(f'{name}={x["v"]} {change(key, x)}')
                 continue
@@ -113,13 +125,14 @@ def basis_text(d):
     """맨 위 기준 문구. kr_date/us_date(예 '10/30','10/29')가 있으면 날짜를 밝힌다."""
     kr, us = d.get("kr_date"), d.get("us_date")
     parts = []
-    if kr: parts.append(f"코스피·환율 {kr} 종가")
-    if us: parts.append(f"미국 증시 {us} 종가")
+    if kr: parts.append(f"코스피·환율 {kr} " + ("휴장" if d.get("kr_closed") else "종가"))
+    if us: parts.append(f"미국 증시 {us} " + ("휴장" if d.get("us_closed") else "종가"))
     return (" · ".join(parts) + " 기준") if parts else "직전 거래일 종가 기준"
 
 
 def _pct(m):
     """종가 행 한 줄: 값이 없으면 '확인 불가'. 반환 (이름 색 화살표 텍스트)."""
+    if m and m.get("closed"): return "closed"
     if not m or m.get("close") is None or m.get("day_pct") is None: return None
     p = float(m["day_pct"])
     return float(m["close"]), p, ("#d62728" if p > 0 else "#1f4fd8" if p < 0 else "#555555"), ("▲" if p > 0 else "▼" if p < 0 else "")
@@ -154,6 +167,9 @@ def markets_html(d):
     rows = []
     for name, v in markets_lines(d):
         if v is None: continue
+        if v == "closed":
+            rows.append(f'<p style="margin:6px 0;font-size:15px"><b>{esc(name)}</b> 휴장</p>')
+            continue
         c, p, col, ar = v
         rows.append(f'<p style="margin:6px 0;font-size:15px"><b>{esc(name)}</b> 종가 ${c:,.2f} / 직전 거래일 대비 '
                     f'<b style="color:{col}">{ar}{abs(p):.2f}%</b></p>')
@@ -174,6 +190,8 @@ def markets_text(d):
     out = []
     for name, v in markets_lines(d):
         if v is None: continue
+        if v == "closed":
+            out.append(f"{name} 휴장"); continue
         c, p, _, ar = v
         out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
     gl = growth_line(d)

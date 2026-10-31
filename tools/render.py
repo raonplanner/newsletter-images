@@ -130,8 +130,8 @@ def basis_text(d):
     """맨 위 기준 문구. kr_date/us_date(예 '10/30','10/29')가 있으면 날짜를 밝힌다."""
     kr, us = d.get("kr_date"), d.get("us_date")
     parts = []
-    if kr: parts.append(f"코스피·환율 {kr} 종가")
-    if us: parts.append(f"미국 증시 {us} 종가")
+    if kr: parts.append(f"코스피·환율 {kr} " + ("휴장" if d.get("kr_closed") else "종가"))
+    if us: parts.append(f"미국 증시 {us} " + ("휴장" if d.get("us_closed") else "종가"))
     return (" · ".join(parts) + " 기준") if parts else "직전 거래일 종가 기준"
 
 
@@ -139,7 +139,10 @@ def build_html(d, rows, H):
     r = d["rows"]
     ndx = r.get("ndx")
     chart_html = ""
-    if ndx:
+    if ndx and ndx.get("closed"):
+        svg = chart_svg(rows, f'{rows[-1][1]:,.0f}', rows[-1][0].replace("-", "."), H)
+        chart_html = f'<div class="chart"><div class="ct">나스닥100 상장 이후 추이 (월말 종가, 로그 눈금)</div>{svg}</div>'
+    elif ndx:
         last_label = f'{ndx["num"]:,.0f}'
         mmdd = ndx["date"][5:].replace("-", ".")
         svg = chart_svg(rows, last_label, f'{ndx["date"][:4]}.{mmdd}', H)
@@ -147,6 +150,10 @@ def build_html(d, rows, H):
     def tr(label, key, g=None, span=1, sp=False):
         x = r[key]
         gcell = f'<td class="g {g}" rowspan="{span}">{label[0]}</td>' if g else ""
+        if x.get("closed"):
+            if key in FX:
+                return f'<tr>{gcell}<td class="fx" colspan="2">{esc(FX[key])} 휴장</td><td class="f">-</td></tr>'
+            return f'<tr>{gcell}<td class="n">{esc(label[1])}</td><td class="v">휴장</td><td class="f">-</td></tr>'
         if key in FX:
             return f'<tr>{gcell}<td class="fx" colspan="2">{esc(FX[key])}={esc(x["v"])}</td>{cell(x, fx=True)}</tr>'
         return f'<tr>{gcell}<td class="n">{esc(label[1])}</td><td class="v">{esc(x["v"])}</td>{cell(x, unit="달러" if key == "wti" else "")}</tr>'
@@ -183,7 +190,7 @@ def main():
     d = json.load(open(inp, encoding="utf8"))
     rows = load_csv()
     ndx = d["rows"].get("ndx")
-    if ndx:
+    if ndx and not ndx.get("closed"):
         month = ndx["date"][:7]
         if rows[-1][0] == month: rows[-1] = (month, float(ndx["num"]))
         elif rows[-1][0] < month: rows.append((month, float(ndx["num"])))
@@ -206,7 +213,7 @@ def main():
         pg = b.new_page(viewport={"width": 1080, "height": 1350}, device_scale_factor=1)
         pg.goto("file://" + os.path.abspath(path)); pg.screenshot(path=os.path.join(out, "post.png")); pg.close()
         b.close()
-    if ndx: save_csv(rows)
+    if ndx and not ndx.get("closed"): save_csv(rows)
     os.remove(path)
     print(f"chart_height={chosen} post=1080x1350")
 

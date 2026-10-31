@@ -6,7 +6,7 @@
 Gmail 도구는 외부 <img>와 style의 'background:' 줄임 표기를 지우므로
 이미지 없이 표로 그리고, 배경색은 bgcolor 속성과 background-color 로만 넣는다.
 """
-import sys, os, json, html
+import re, sys, os, json, html
 
 NAVY, GREEN, BROWN, RED = "#12294d", "#0e6b4f", "#7a4a12", "#c8102e"
 DIR = {"up": ("▲ ", "#fbc9cc", RED), "down": ("▼ ", "#c3d8f8", "#1553b0"), "flat": ("", "#e6ebf5", "#6e7887")}
@@ -171,6 +171,17 @@ def view_url(u):
     return u
 
 
+SIGN = "메트라이프금융서비스 송근영팀장"
+
+
+def greet(d):
+    """인사말에는 항상 '메트라이프금융서비스 송근영팀장'이 들어간다(없으면 앞에 붙인다)."""
+    g = d["greeting"].strip()
+    if SIGN in g: return g
+    rest = re.sub(r"^안녕하세요[,.!\s]*", "", g)
+    return f"안녕하세요, {SIGN}입니다. {rest}".strip()
+
+
 def markets_html(d):
     """펀드 종가 블록. 값이 없는 줄·블록은 흔적 없이 뺀다. 그래프는 첨부 대신 링크(graph_url)."""
     rows = []
@@ -221,12 +232,12 @@ def main():
     link = (f'<p style="font-size:14px;margin:4px 0"><a href="{esc(img)}">소식지 이미지(나스닥100 장기 추이 차트 포함) 크게 보기</a></p>'
             if img else "")
     page = (f'<div style="max-width:560px;margin:0 auto;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#1b2433">'
-            f'{head}<p style="font-size:14px;margin:12px 0 4px">{esc(d["greeting"])}</p>{corner_html(d["corner"])}{table_html(d["rows"])}{markets_html(d)}'
+            f'{head}<p style="font-size:14px;margin:12px 0 4px">{esc(greet(d))}</p>{corner_html(d["corner"])}{table_html(d["rows"])}{markets_html(d)}'
             f'{link}'
-            f'<p style="font-size:14px;margin:10px 0 4px">상담 문의 010-3224-1517</p>'
+            f'<p style="font-size:14px;margin:10px 0 4px">{SIGN} 상담 문의 010-3224-1517</p>'
             f'<p style="font-size:11px;color:#6a7587;margin-top:10px">{esc(d["src"])}<br>※ 본 자료는 정보 제공용입니다.</p></div>')
-    text = (f'오늘의 소식지 {d["date_label"]} ({basis_text(d)})\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{d["greeting"]}\n\n{corner_text(d["corner"])}\n\n■ 직전 거래일 시장\n{text_rows(d["rows"])}\n\n{markets_text(d)}' + (f"소식지 이미지: {img}\n\n" if img else "")
-            + f'상담 문의 010-3224-1517\n\n※ 본 자료는 정보 제공용입니다.\n')
+    text = (f'오늘의 소식지 {d["date_label"]} ({basis_text(d)})\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{greet(d)}\n\n{corner_text(d["corner"])}\n\n■ 직전 거래일 시장\n{text_rows(d["rows"])}\n\n{markets_text(d)}' + (f"소식지 이미지: {img}\n\n" if img else "")
+            + f'{SIGN} 상담 문의 010-3224-1517\n\n※ 본 자료는 정보 제공용입니다.\n')
     open(os.path.join(out, "mail.html"), "w", encoding="utf8").write(page)
     open(os.path.join(out, "mail.txt"), "w", encoding="utf8").write(text)
     print(f"mail.html {len(page)}자, mail.txt {len(text)}자")

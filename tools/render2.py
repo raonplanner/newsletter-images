@@ -23,6 +23,15 @@ G0 = [100,141.3,133.6,197.6,283.8,367.8,258.0,394.7,492.8,617.2,806.0]
 N0 = [100,133.5,133.3,185.2,275.2,350.6,236.4,366.1,459.8,555.3,638.9]
 
 
+def basis_text(d):
+    """맨 위 기준 문구. kr_date/us_date(예 '10/30','10/29')가 있으면 날짜를 밝힌다."""
+    kr, us = d.get("kr_date"), d.get("us_date")
+    parts = []
+    if kr: parts.append(f"코스피·환율 {kr} 종가")
+    if us: parts.append(f"미국 증시 {us} 종가")
+    return (" · ".join(parts) + " 기준") if parts else "직전 거래일 종가 기준"
+
+
 def main():
     inp, out = sys.argv[1], sys.argv[2]
     os.makedirs(out, exist_ok=True)
@@ -30,12 +39,19 @@ def main():
     mk = d.get("markets") or {}
     gr = d.get("growth10y") or {}
     G, N = gr.get("global_tech"), gr.get("nasdaq100")
+    for k in ("global_tech", "nasdaq100"):
+        m = mk.get(k) or {}
+        if m.get("close") is None or m.get("day_pct") is None:
+            raise SystemExit("펀드 종가 자료가 없어 post2.png를 만들지 않는다(빈 칸·확인 불가 표기 금지).")
+    if G is None or N is None:
+        raise SystemExit("10년 성장 자료가 없어 post2.png를 만들지 않는다.")
     fig = plt.figure(figsize=(10.8, 13.5), dpi=100); fig.patch.set_facecolor("white")
     bg = fig.add_axes([0, 0, 1, 1]); bg.set_xlim(0, 1080); bg.set_ylim(1350, 0); bg.axis("off")
     bg.add_patch(plt.Rectangle((0, 0), 1080, 154, color=NAVY))
-    bg.text(40, 42, f'{d["date_label"]} · 직전 거래일 종가 기준', color="#c9d6ee", fontsize=19, va="center")
-    bg.text(40, 95, "오늘의 소식지", color="white", fontsize=40, fontweight="bold", va="center")
-    bg.text(374, 100, "[해외주식 비과세]", color="#ffd666", fontsize=21, fontweight="bold", va="center")
+    bg.text(40, 26, d["date_label"], color="#c9d6ee", fontsize=17, va="center")
+    bg.text(40, 52, basis_text(d), color="#c9d6ee", fontsize=17, va="center")
+    bg.text(40, 105, "오늘의 소식지", color="white", fontsize=40, fontweight="bold", va="center")
+    bg.text(374, 110, "[해외주식 비과세]", color="#ffd666", fontsize=21, fontweight="bold", va="center")
     bg.text(1040, 45, "송근영 Mentor", color="white", fontsize=23, fontweight="bold", va="center", ha="right")
     bg.text(1040, 80, "메트라이프금융서비스(주) 중부직할지점", color="#c9d6ee", fontsize=17, va="center", ha="right")
     bg.text(1040, 112, "m. 010-3224-1517", color="#c9d6ee", fontsize=17, va="center", ha="right")

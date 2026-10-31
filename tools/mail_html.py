@@ -109,6 +109,15 @@ def text_rows(r):
     return "\n".join(out)
 
 
+def basis_text(d):
+    """맨 위 기준 문구. kr_date/us_date(예 '10/30','10/29')가 있으면 날짜를 밝힌다."""
+    kr, us = d.get("kr_date"), d.get("us_date")
+    parts = []
+    if kr: parts.append(f"코스피·환율 {kr} 종가")
+    if us: parts.append(f"미국 증시 {us} 종가")
+    return (" · ".join(parts) + " 기준") if parts else "직전 거래일 종가 기준"
+
+
 def _pct(m):
     """종가 행 한 줄: 값이 없으면 '확인 불가'. 반환 (이름 색 화살표 텍스트)."""
     if not m or m.get("close") is None or m.get("day_pct") is None: return None
@@ -135,33 +144,37 @@ DISC = "과거 성과는 미래 수익을 보장하지 않으며, 정보 제공�
 
 
 def markets_html(d):
+    """펀드 종가 블록. 값이 없는 줄·블록은 흔적 없이 뺀다. 그래프는 첨부 대신 링크(graph_url)."""
     rows = []
     for name, v in markets_lines(d):
-        if v is None:
-            rows.append(f'<p style="margin:6px 0;font-size:15px">{esc(name)} 종가 확인 불가</p>')
-        else:
-            c, p, col, ar = v
-            rows.append(f'<p style="margin:6px 0;font-size:15px"><b>{esc(name)}</b> 종가 ${c:,.2f} / 직전 거래일 대비 '
-                        f'<b style="color:{col}">{ar}{abs(p):.2f}%</b></p>')
+        if v is None: continue
+        c, p, col, ar = v
+        rows.append(f'<p style="margin:6px 0;font-size:15px"><b>{esc(name)}</b> 종가 ${c:,.2f} / 직전 거래일 대비 '
+                    f'<b style="color:{col}">{ar}{abs(p):.2f}%</b></p>')
     gl = growth_line(d)
-    gtxt = esc(gl) if gl else "10년 성장 추이 확인 불가"
+    url = d.get("graph_url") if gl else None
+    if not rows and not gl: return ""
+    body = "".join(rows)
+    if gl:
+        body += f'<p style="margin:8px 0 2px;font-size:14px;font-weight:bold">{esc(gl)}</p>'
+    if url:
+        body += f'<p style="margin:2px 0;font-size:14px"><a href="{esc(url)}">10년 성장 그래프 크게 보기</a></p>'
+    body += f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC}</p>'
     return (f'<div style="margin-top:12px;border-top:2px solid {NAVY};padding-top:8px"><b style="color:{NAVY};font-size:15px">직전 거래일 종가</b>'
-            + "".join(rows)
-            + f'<p style="margin:8px 0 2px;font-size:14px;font-weight:bold">{gtxt}</p>'
-            f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC}{" 그래프는 첨부 이미지를 확인해 주세요." if gl else ""}</p></div>')
+            + body + '</div>')
 
 
 def markets_text(d):
-    out = ["■ 직전 거래일 종가"]
+    out = []
     for name, v in markets_lines(d):
-        if v is None: out.append(f"{name} 종가 확인 불가")
-        else:
-            c, p, _, ar = v
-            out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
+        if v is None: continue
+        c, p, _, ar = v
+        out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
     gl = growth_line(d)
-    out.append(gl or "10년 성장 추이 확인 불가")
-    out.append(DISC + (" 그래프는 첨부 이미지를 확인해 주세요." if gl else ""))
-    return "\n".join(out) + "\n\n"
+    if gl: out.append(gl)
+    if gl and d.get("graph_url"): out.append(f"10년 성장 그래프: {d['graph_url']}")
+    if not out: return ""
+    return "■ 직전 거래일 종가\n" + "\n".join(out) + "\n" + DISC + "\n\n"
 
 
 def main():
@@ -172,7 +185,7 @@ def main():
     sub_html = (f'<div style="font-size:15px;font-weight:bold;margin-top:4px;color:#ffd666">{esc(d["subtitle"])}</div>'
                 if d.get("subtitle") else "")
     head = (f'<table width="100%" cellpadding="0" cellspacing="0" {bg(NAVY)}border-collapse:collapse;color:#ffffff">'
-            f'<tr><td {bg(NAVY)}padding:14px 18px"><div style="font-size:13px;color:#c9d6ee">{esc(d["date_label"])} · 직전 거래일 종가 기준</div>'
+            f'<tr><td {bg(NAVY)}padding:14px 18px"><div style="font-size:13px;color:#c9d6ee">{esc(d["date_label"])} · {esc(basis_text(d))}</div>'
             f'<div style="font-size:26px;font-weight:bold;margin-top:2px;color:#ffffff">오늘의 소식지 <span style="font-size:15px;color:#ffd666">[해외주식 비과세]</span></div>{sub_html}</td>'
             f'<td {bg(NAVY)}padding:14px 18px;text-align:right;font-size:12px;color:#c9d6ee;line-height:1.5">'
             f'<b style="font-size:15px;color:#ffffff">송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점</td></tr></table>')
@@ -183,7 +196,7 @@ def main():
             f'<p style="font-size:14px;margin:14px 0 4px">{esc(d["greeting"])}</p>{link}'
             f'<p style="font-size:14px;margin:10px 0 4px">상담 문의 010-3224-1517<br>상담 신청 <a href="{CONSULT}">{CONSULT}</a></p>'
             f'<p style="font-size:11px;color:#6a7587;margin-top:10px">{esc(d["src"])}<br>※ 본 자료는 정보 제공용입니다.</p></div>')
-    text = (f'오늘의 소식지 {d["date_label"]} (직전 거래일 종가 기준)\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{d["greeting"]}\n\n{corner_text(d["corner"])}\n\n■ 직전 거래일 시장\n{text_rows(d["rows"])}\n\n{markets_text(d)}' + (f"소식지 이미지: {img}\n\n" if img else "")
+    text = (f'오늘의 소식지 {d["date_label"]} ({basis_text(d)})\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{d["greeting"]}\n\n{corner_text(d["corner"])}\n\n■ 직전 거래일 시장\n{text_rows(d["rows"])}\n\n{markets_text(d)}' + (f"소식지 이미지: {img}\n\n" if img else "")
             + f'상담 문의 010-3224-1517\n상담 신청 {CONSULT}\n\n※ 본 자료는 정보 제공용입니다.\n')
     open(os.path.join(out, "mail.html"), "w", encoding="utf8").write(page)
     open(os.path.join(out, "mail.txt"), "w", encoding="utf8").write(text)

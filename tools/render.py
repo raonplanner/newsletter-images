@@ -126,12 +126,24 @@ def corner_html(c):
     return f'<div class="corner"><span class="tag">{tag}</span><ul>{li}</ul>{close}</div>'
 
 
+def basis_text(d):
+    """맨 위 기준 문구. kr_date/us_date(예 '10/30','10/29')가 있으면 날짜를 밝힌다."""
+    kr, us = d.get("kr_date"), d.get("us_date")
+    parts = []
+    if kr: parts.append(f"코스피·환율 {kr} 종가")
+    if us: parts.append(f"미국 증시 {us} 종가")
+    return (" · ".join(parts) + " 기준") if parts else "직전 거래일 종가 기준"
+
+
 def build_html(d, rows, H):
     r = d["rows"]
-    ndx = r["ndx"]
-    last_label = f'{ndx["num"]:,.0f}'
-    mmdd = ndx["date"][5:].replace("-", ".")
-    svg = chart_svg(rows, last_label, f'{ndx["date"][:4]}.{mmdd}', H)
+    ndx = r.get("ndx")
+    chart_html = ""
+    if ndx:
+        last_label = f'{ndx["num"]:,.0f}'
+        mmdd = ndx["date"][5:].replace("-", ".")
+        svg = chart_svg(rows, last_label, f'{ndx["date"][:4]}.{mmdd}', H)
+        chart_html = f'<div class="chart"><div class="ct">나스닥100 상장 이후 추이 (월말 종가, 로그 눈금)</div>{svg}</div>'
     def tr(label, key, g=None, span=1, sp=False):
         x = r[key]
         gcell = f'<td class="g {g}" rowspan="{span}">{label[0]}</td>' if g else ""
@@ -139,14 +151,22 @@ def build_html(d, rows, H):
             return f'<tr>{gcell}<td class="fx" colspan="2">{esc(FX[key])}={esc(x["v"])}</td>{cell(x, fx=True)}</tr>'
         return f'<tr>{gcell}<td class="n">{esc(label[1])}</td><td class="v">{esc(x["v"])}</td>{cell(x, unit="달러" if key == "wti" else "")}</tr>'
     spacer = '<tr class="sp"><td colspan="4"></td></tr>'
-    table = ("<table><tr><th>구분</th><th>지표</th><th>종가</th><th>직전 거래일 대비</th></tr>"
-             + tr(("증시", "코스피"), "kospi", "g1", 2) + tr(("", "나스닥100"), "ndx") + spacer
-             + tr(("환율", ""), "usd", "g2", 2 if "jpy" in r else 1) + (tr(("", ""), "jpy") if "jpy" in r else "") +((spacer + tr(("유가", "국제유가"), "wti", "g3", 1)) if "wti" in r else "") + "</table>")
+    groups = []
+    for glabel, gcls, keys in (("증시", "g1", (("코스피", "kospi"), ("나스닥100", "ndx"))),
+                               ("환율", "g2", (("", "usd"), ("", "jpy"))),
+                               ("유가", "g3", (("국제유가", "wti"),))):
+        present = [(n, k) for n, k in keys if k in r]
+        if not present: continue
+        part = ""
+        for i, (n, k) in enumerate(present):
+            part += tr((glabel if i == 0 else "", n), k, gcls if i == 0 else None, len(present))
+        groups.append(part)
+    table = "<table><tr><th>구분</th><th>지표</th><th>종가</th><th>직전 거래일 대비</th></tr>" + spacer.join(groups) + "</table>"
     sub_html = f'<div class="sub">{esc(d["subtitle"])}</div>' if d.get("subtitle") else ""
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">'
-            f'<header><div><div class="date">{esc(d["date_label"])} · 직전 거래일 종가 기준</div><h1>오늘의 소식지 <span class="ttl">[해외주식 비과세]</span></h1>{sub_html}</div>'
+            f'<header><div><div class="date">{esc(d["date_label"])}<br><span style="white-space:nowrap">{esc(basis_text(d))}</span></div><h1>오늘의 소식지 <span class="ttl">[해외주식 비과세]</span></h1>{sub_html}</div>'
             f'<div class="me"><b>송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점<br>m. 010-3224-1517</div></header>'
-            f'<main>{corner_html(d["corner"])}{table}<div class="chart"><div class="ct">나스닥100 상장 이후 추이 (월말 종가, 로그 눈금)</div>{svg}</div>'
+            f'<main>{corner_html(d["corner"])}{table}{chart_html}'
             f'</main><div class="src">{esc(d["src"])}</div></div></body></html>')
 
 
@@ -162,12 +182,13 @@ def main():
     os.makedirs(out, exist_ok=True)
     d = json.load(open(inp, encoding="utf8"))
     rows = load_csv()
-    ndx = d["rows"]["ndx"]
-    month = ndx["date"][:7]
-    if rows[-1][0] == month: rows[-1] = (month, float(ndx["num"]))
-    elif rows[-1][0] < month: rows.append((month, float(ndx["num"])))
-    else:
-        raise SystemExit("ndx.date 월이 CSV 마지막 월보다 과거입니다.")
+    ndx = d["rows"].get("ndx")
+    if ndx:
+        month = ndx["date"][:7]
+        if rows[-1][0] == month: rows[-1] = (month, float(ndx["num"]))
+        elif rows[-1][0] < month: rows.append((month, float(ndx["num"])))
+        else:
+            raise SystemExit("ndx.date 월이 CSV 마지막 월보다 과거입니다.")
     path = os.path.join(out, "page.html")
     with sync_playwright() as p:
         b = p.chromium.launch()
@@ -184,20 +205,10 @@ def main():
             raise SystemExit("내용이 길어 한 장에 들어가지 않습니다. 코너 문장을 줄이세요.")
         pg = b.new_page(viewport={"width": 1080, "height": 1350}, device_scale_factor=1)
         pg.goto("file://" + os.path.abspath(path)); pg.screenshot(path=os.path.join(out, "post.png")); pg.close()
-        ok = None
-        dsf = 0.66
-        while dsf >= 0.54:
-            pg = b.new_page(viewport={"width": 1080, "height": 1350}, device_scale_factor=dsf)
-            pg.goto("file://" + os.path.abspath(path)); tmp = os.path.join(out, "mail_raw.png"); pg.screenshot(path=tmp); pg.close()
-            q = quantize(Image.open(tmp)); q.save(os.path.join(out, "mail.png"), optimize=True)
-            n = len(base64.b64encode(open(os.path.join(out, "mail.png"), "rb").read()))
-            if n <= LIMIT: ok = (dsf, q.size, n); break
-            dsf = round(dsf - 0.02, 2)
         b.close()
-    os.remove(os.path.join(out, "mail_raw.png"))
-    if not ok: raise SystemExit("메일 첨부 용량 한도(28,000자)를 맞추지 못했습니다.")
-    save_csv(rows)
-    print(f"chart_height={chosen} mail_scale={ok[0]} mail_size={ok[1]} mail_b64_len={ok[2]} post=1080x1350")
+    if ndx: save_csv(rows)
+    os.remove(path)
+    print(f"chart_height={chosen} post=1080x1350")
 
 
 main()

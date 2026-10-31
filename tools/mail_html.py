@@ -128,19 +128,25 @@ def _pct(m):
 def markets_lines(d):
     mk = d.get("markets") or {}
     out = []
-    for name, key in (("글로벌IT섹터펀드", "global_tech"), ("나스닥100ETF", "nasdaq100")):
+    for name, key in (("글로벌IT섹터ETF", "global_tech"), ("나스닥100ETF", "nasdaq100")):
         v = _pct(mk.get(key))
         out.append((name, v))
     return out
 
 
+def _growth(d):
+    gj = d.get("growth_json")
+    if gj and os.path.exists(gj): return json.load(open(gj, encoding="utf8"))
+    return None
+
+
 def growth_line(d):
-    g = d.get("growth10y") or {}
-    if g.get("global_tech") is None or g.get("nasdaq100") is None: return None
-    return f'10년 누적수익률 글로벌IT섹터펀드 {float(g["global_tech"]) - 100:+.1f}% / 나스닥100ETF {float(g["nasdaq100"]) - 100:+.1f}%'
+    g = _growth(d)
+    if not g: return None
+    return f'15년 누적수익률(환율 반영) 글로벌IT섹터ETF {g["global_tech"][-1] - 100:+.1f}% / 나스닥100ETF {g["nasdaq100"][-1] - 100:+.1f}%'
 
 
-DISC = "과거 성과는 미래 수익을 보장하지 않으며, 정보 제공용입니다."
+DISC = "해외 ETF 수익률에 원/달러 환율을 반영한 원화 기준 개략 추이이며, 과거 성과는 미래 수익을 보장하지 않습니다. 정보 제공용입니다."
 
 
 def markets_html(d):
@@ -158,7 +164,7 @@ def markets_html(d):
     if gl:
         body += f'<p style="margin:8px 0 2px;font-size:14px;font-weight:bold">{esc(gl)}</p>'
     if url:
-        body += f'<p style="margin:2px 0;font-size:14px"><a href="{esc(url)}">10년 성장 그래프 크게 보기</a></p>'
+        body += f'<p style="margin:2px 0;font-size:14px"><a href="{esc(url)}">종가·15년 성장 그래프 이미지 크게 보기</a></p>'
     body += f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC}</p>'
     return (f'<div style="margin-top:12px;border-top:2px solid {NAVY};padding-top:8px"><b style="color:{NAVY};font-size:15px">직전 거래일 종가</b>'
             + body + '</div>')
@@ -172,7 +178,7 @@ def markets_text(d):
         out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
     gl = growth_line(d)
     if gl: out.append(gl)
-    if gl and d.get("graph_url"): out.append(f"10년 성장 그래프: {d['graph_url']}")
+    if gl and d.get("graph_url"): out.append(f"종가·15년 성장 그래프 이미지: {d['graph_url']}")
     if not out: return ""
     return "■ 직전 거래일 종가\n" + "\n".join(out) + "\n" + DISC + "\n\n"
 

@@ -164,8 +164,8 @@ def build_html(d, rows, H):
     table = "<table><tr><th>구분</th><th>지표</th><th>종가</th><th>직전 거래일 대비</th></tr>" + spacer.join(groups) + "</table>"
     sub_html = f'<div class="sub">{esc(d["subtitle"])}</div>' if d.get("subtitle") else ""
     return (f'<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>{CSS}</style></head><body><div class="wrap">'
-            f'<header><div><div class="date">{esc(d["date_label"])}<br><span style="white-space:nowrap">{esc(basis_text(d))}</span></div><h1>오늘의 소식지 <span class="ttl">[해외주식 비과세]</span></h1>{sub_html}</div>'
-            f'<div class="me"><b>송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점<br>m. 010-3224-1517</div></header>'
+            f'<header><div><div class="date">{esc(d["date_label"])}<br><span style="white-space:nowrap">{esc(basis_text(d))}</span></div><h1>오늘의 소식지 <span class="ttl">[해외주식 비과세 투자상담]</span></h1>{sub_html}</div>'
+            f'</header>'
             f'<main>{corner_html(d["corner"])}{table}{chart_html}'
             f'</main><div class="src">{esc(d["src"])}</div></div></body></html>')
 

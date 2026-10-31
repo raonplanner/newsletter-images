@@ -188,8 +188,6 @@ def markets_html(d):
     body = "".join(rows)
     if gl:
         body += f'<p style="margin:8px 0 2px;font-size:14px;font-weight:bold">{esc(gl)}</p>'
-    if gl:
-        body += '<p style="margin:2px 0;font-size:14px">종가·15년 성장 그래프는 인스타그램 첫 번째 이미지에서 보실 수 있습니다.</p>'
     body += f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC}</p>'
     return (f'<div style="margin-top:12px;border-top:2px solid {NAVY};padding-top:8px"><b style="color:{NAVY};font-size:15px">직전 거래일 종가</b>'
             + body + '</div>')
@@ -205,7 +203,6 @@ def markets_text(d):
         out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
     gl = growth_line(d)
     if gl: out.append(gl)
-    if gl: out.append("종가·15년 성장 그래프는 인스타그램 첫 번째 이미지에서 보실 수 있습니다.")
     if not out: return ""
     return "■ 직전 거래일 종가\n" + "\n".join(out) + "\n" + DISC + "\n\n"
 
@@ -224,8 +221,8 @@ def main():
     link = (f'<p style="font-size:14px;margin:4px 0"><a href="{esc(img)}">소식지 이미지(나스닥100 장기 추이 차트 포함) 크게 보기</a></p>'
             if img else "")
     page = (f'<div style="max-width:560px;margin:0 auto;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#1b2433">'
-            f'{head}{corner_html(d["corner"])}{table_html(d["rows"])}{markets_html(d)}'
-            f'<p style="font-size:14px;margin:14px 0 4px">{esc(d["greeting"])}</p>{link}'
+            f'{head}<p style="font-size:14px;margin:12px 0 4px">{esc(d["greeting"])}</p>{corner_html(d["corner"])}{table_html(d["rows"])}{markets_html(d)}'
+            f'{link}'
             f'<p style="font-size:14px;margin:10px 0 4px">상담 문의 010-3224-1517</p>'
             f'<p style="font-size:11px;color:#6a7587;margin-top:10px">{esc(d["src"])}<br>※ 본 자료는 정보 제공용입니다.</p></div>')
     text = (f'오늘의 소식지 {d["date_label"]} ({basis_text(d)})\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{d["greeting"]}\n\n{corner_text(d["corner"])}\n\n■ 직전 거래일 시장\n{text_rows(d["rows"])}\n\n{markets_text(d)}' + (f"소식지 이미지: {img}\n\n" if img else "")

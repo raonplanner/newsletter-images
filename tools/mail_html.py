@@ -162,6 +162,15 @@ def growth_line(d):
 DISC = "해외 ETF 수익률에 원/달러 환율을 반영한 원화 기준 개략 추이이며, 과거 성과는 미래 수익을 보장하지 않습니다. 정보 제공용입니다."
 
 
+def view_url(u):
+    """raw.githubusercontent.com 주소는 Gmail이 '리디렉션 알림' 경고창을 띄우므로 github.com 보기 주소로 바꾼다."""
+    pre = "https://raw.githubusercontent.com/"
+    if u and u.startswith(pre):
+        o, r, br, rest = u[len(pre):].split("/", 3)
+        return f"https://github.com/{o}/{r}/blob/{br}/{rest}"
+    return u
+
+
 def markets_html(d):
     """펀드 종가 블록. 값이 없는 줄·블록은 흔적 없이 뺀다. 그래프는 첨부 대신 링크(graph_url)."""
     rows = []
@@ -174,7 +183,7 @@ def markets_html(d):
         rows.append(f'<p style="margin:6px 0;font-size:15px"><b>{esc(name)}</b> 종가 ${c:,.2f} / 직전 거래일 대비 '
                     f'<b style="color:{col}">{ar}{abs(p):.2f}%</b></p>')
     gl = growth_line(d)
-    url = d.get("graph_url") if gl else None
+    url = view_url(d.get("graph_url")) if gl else None
     if not rows and not gl: return ""
     body = "".join(rows)
     if gl:
@@ -196,7 +205,7 @@ def markets_text(d):
         out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
     gl = growth_line(d)
     if gl: out.append(gl)
-    if gl and d.get("graph_url"): out.append(f"종가·15년 성장 그래프 이미지: {d['graph_url']}")
+    if gl and d.get("graph_url"): out.append(f"종가·15년 성장 그래프 이미지: {view_url(d['graph_url'])}")
     if not out: return ""
     return "■ 직전 거래일 종가\n" + "\n".join(out) + "\n" + DISC + "\n\n"
 

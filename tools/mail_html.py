@@ -210,9 +210,8 @@ def main():
                 if d.get("subtitle") else "")
     head = (f'<table width="100%" cellpadding="0" cellspacing="0" {bg(NAVY)}border-collapse:collapse;color:#ffffff">'
             f'<tr><td {bg(NAVY)}padding:14px 18px"><div style="font-size:13px;color:#c9d6ee">{esc(d["date_label"])} · {esc(basis_text(d))}</div>'
-            f'<div style="font-size:26px;font-weight:bold;margin-top:2px;color:#ffffff">오늘의 소식지 <span style="font-size:15px;color:#ffd666">[해외주식 비과세]</span></div>{sub_html}</td>'
-            f'<td {bg(NAVY)}padding:14px 18px;text-align:right;font-size:12px;color:#c9d6ee;line-height:1.5">'
-            f'<b style="font-size:15px;color:#ffffff">송근영 Mentor</b><br>메트라이프금융서비스(주) 중부직할지점</td></tr></table>')
+            f'<div style="font-size:26px;font-weight:bold;margin-top:2px;color:#ffffff">오늘의 소식지 <span style="font-size:15px;color:#ffd666">[해외주식 비과세 투자상담]</span></div>{sub_html}</td>'
+            f'</tr></table>')
     link = (f'<p style="font-size:14px;margin:4px 0"><a href="{esc(img)}">소식지 이미지(나스닥100 장기 추이 차트 포함) 크게 보기</a></p>'
             if img else "")
     page = (f'<div style="max-width:560px;margin:0 auto;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#1b2433">'

@@ -234,10 +234,10 @@ def main():
     page = (f'<div style="max-width:560px;margin:0 auto;font-family:\'Apple SD Gothic Neo\',\'Malgun Gothic\',sans-serif;color:#1b2433">'
             f'{head}<p style="font-size:14px;margin:12px 0 4px">{esc(greet(d))}</p>{corner_html(d["corner"])}{table_html(d["rows"])}{markets_html(d)}'
             f'{link}'
-            f'<p style="font-size:14px;margin:10px 0 4px">{SIGN} 상담 문의 010-3224-1517</p>'
+            f'<p style="font-size:14px;margin:10px 0 4px">{SIGN} 010-3224-1517</p>'
             f'<p style="font-size:11px;color:#6a7587;margin-top:10px">{esc(d["src"])}<br>※ 본 자료는 정보 제공용입니다.</p></div>')
     text = (f'오늘의 소식지 {d["date_label"]} ({basis_text(d)})\n' + (f'{d["subtitle"]}\n' if d.get("subtitle") else '') + f'\n{greet(d)}\n\n{corner_text(d["corner"])}\n\n■ 직전 거래일 시장\n{text_rows(d["rows"])}\n\n{markets_text(d)}' + (f"소식지 이미지: {img}\n\n" if img else "")
-            + f'{SIGN} 상담 문의 010-3224-1517\n\n※ 본 자료는 정보 제공용입니다.\n')
+            + f'{SIGN} 010-3224-1517\n\n※ 본 자료는 정보 제공용입니다.\n')
     open(os.path.join(out, "mail.html"), "w", encoding="utf8").write(page)
     open(os.path.join(out, "mail.txt"), "w", encoding="utf8").write(text)
     print(f"mail.html {len(page)}자, mail.txt {len(text)}자")

@@ -188,8 +188,8 @@ def markets_html(d):
     body = "".join(rows)
     if gl:
         body += f'<p style="margin:8px 0 2px;font-size:14px;font-weight:bold">{esc(gl)}</p>'
-    if url:
-        body += f'<p style="margin:2px 0;font-size:14px"><a href="{esc(url)}">종가·15년 성장 그래프 이미지 크게 보기</a></p>'
+    if gl:
+        body += '<p style="margin:2px 0;font-size:14px">종가·15년 성장 그래프는 인스타그램 첫 번째 이미지에서 보실 수 있습니다.</p>'
     body += f'<p style="margin:2px 0;font-size:11px;color:#6a7587">{DISC}</p>'
     return (f'<div style="margin-top:12px;border-top:2px solid {NAVY};padding-top:8px"><b style="color:{NAVY};font-size:15px">직전 거래일 종가</b>'
             + body + '</div>')
@@ -205,7 +205,7 @@ def markets_text(d):
         out.append(f"{name} 종가 ${c:,.2f} / 직전 거래일 대비 {ar}{abs(p):.2f}%")
     gl = growth_line(d)
     if gl: out.append(gl)
-    if gl and d.get("graph_url"): out.append(f"종가·15년 성장 그래프 이미지: {view_url(d['graph_url'])}")
+    if gl: out.append("종가·15년 성장 그래프는 인스타그램 첫 번째 이미지에서 보실 수 있습니다.")
     if not out: return ""
     return "■ 직전 거래일 종가\n" + "\n".join(out) + "\n" + DISC + "\n\n"
 

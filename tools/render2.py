@@ -103,7 +103,7 @@ def main():
     bg.text(58, 1193, "투자는 원금 손실이 날 수 있어요. 투자 전 상담은 꼭 전문가에게 받아 보시고, 본인이 결정하셔야 합니다.", fontsize=14, color="#3a4659", va="center")
     bg.add_patch(plt.Rectangle((40, 1218), 1000, 52, color="#3a4659"))
     bg.text(58, 1232, "자격 · 증권투자권유대행인(골든트리투자자문 소속, 등록번호 8217000309)", fontsize=12.5, color="white", va="center")
-    bg.text(58, 1256, "변액보험판매관리사(2010.10.28 합격) · 펀드투자상담사(2013.09.27 합격)", fontsize=12.5, color="white", va="center")
+    bg.text(58, 1256, "변액보험판매관리사(2010.10.28 합격) · 펀드투자상담사(등록번호 8113001435)", fontsize=12.5, color="white", va="center")
     bg.add_patch(plt.Rectangle((0, 1280), 1080, 70, color=NAVY))
     bg.text(540, 1301, "메트라이프금융서비스 송근영팀장", fontsize=17, fontweight="bold", color="white", ha="center", va="center")
     bg.text(540, 1330, "010-3224-1517", fontsize=22, fontweight="bold", color="white", ha="center", va="center")

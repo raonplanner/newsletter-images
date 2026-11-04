@@ -74,7 +74,7 @@ def build_html(d, z):
     if cells:
         out.append(cell_box(cells[min(int(d.get("image_cell", 0)), len(cells) - 1)]))
     out.append(f'<div class="q"><b>자격</b> · 증권투자권유대행인(골든트리투자자문 소속, 등록번호 8217000309)<br>'
-               f'변액보험판매관리사(2010.10.28 합격) · 펀드투자상담사(2013.09.27 합격)</div>')
+               f'변액보험판매관리사(2010.10.28 합격) · 펀드투자상담사(등록번호 8113001435)</div>')
     out.append(f'<div class="bd"><div class="a">{SIGN}</div><div class="b">{PHONE}</div></div>')
     kw = "휴장" if d.get("kr_closed") else "마감"
     uw = "휴장" if d.get("us_closed") else "마감"

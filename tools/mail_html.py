@@ -126,6 +126,8 @@ def build(d):
                  + (f"\n{_plain(foot)}" if foot else ""))
     # --- 전일종가(미국 ETF) ---
     el = etf_lines(d)
+    if not el and "ndx" in r:
+        el = [("나스닥100", row_view("ndx", r["ndx"])[:4])]
     if el:
         rows = [(n, v[0], v[1], v[2], v[3], 13) for n, v in el]
         gp = growth_pairs(d)

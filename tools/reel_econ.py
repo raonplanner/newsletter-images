@@ -92,21 +92,26 @@ def render(cfg,out,frames_dir=None):
         a=ease((t-2.8)/0.6)
         if a>0 and t<18.6:
             L,d=layer()
-            tag="지난 밤 해외경제 이슈 · "+cfg["date_label"]
+            tag=cfg.get("tag","지난 밤 해외경제 이슈")+" · "+cfg["date_label"]
             ctext(d,tag,290,F(40),SKY)
             im=apply(im,L,a)
         # S2 indices
         a=fade(t,3.2,3.9,8.6,9.3)
         if a>0:
             L,d=layer()
-            ctext(d,"미국 3대 지수",370,F(64),WHITE)
+            ctext(d,cfg.get("indices_title","미국 3대 지수"),370,F(64),WHITE)
             for k,it in enumerate(idx[:3]):
                 ak=ease((t-(3.5+k*0.45))/0.6)
                 y=480+k*360+(1-ak)*50
-                col=UP if it["pct"]>=0 else DOWN
+                col=(UP if it["pct"]>=0 else DOWN) if "pct" in it else SOFT
                 al=int(255*ak)
                 d.rounded_rectangle((90,y,W-90,y+330),radius=40,fill=CARD+(al,),outline=CARDLN+(al,),width=3)
                 d.text((150,y+28),it["name"],font=F(58),fill=SOFT+(al,))
+                if "text" in it:
+                    col=UP if it.get("dir","flat")=="up" else (DOWN if it.get("dir")=="down" else SOFT)
+                    d.text((150,y+130),it["text"],font=F(84),fill=col+(al,))
+                    d.text((150,y+250),it.get("sub",""),font=F(44,False),fill=SOFT+(al,))
+                    continue
                 val=f'{it["value"]:,.{it.get("dec",2)}f}'
                 d.text((150,y+105),val,font=F(100),fill=WHITE+(al,))
                 prog=ease((t-(3.9+k*0.45))/1.3)

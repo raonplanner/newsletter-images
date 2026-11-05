@@ -86,7 +86,7 @@ def render(cfg,out,frames_dir=None):
             ctext(d,"해외경제 이슈",740,F(124),WHITE)
             d.rectangle((W/2-80,930,W/2+80,936),fill=SKY)
             ctext(d,cfg["date_label"],990,F(54,False),SOFT)
-            ctext(d,"미국 정규장 마감 기준",1070,F(44,False),SOFT)
+            ctext(d,cfg.get("basis","미국 정규장 마감 기준"),1070,F(44,False),SOFT)
             im=apply(im,L,a,dy=(1-a)*30)
         # tag (safe zone)
         a=ease((t-2.8)/0.6)

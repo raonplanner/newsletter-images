@@ -93,7 +93,7 @@ def pill(d,cx,y,txt,font,fill,tc):
     d.rounded_rectangle((cx-w/2-pad,y,cx+w/2+pad,y+h),radius=h//2,fill=fill)
     d.text((cx-w/2,y+6),txt,font=font,fill=tc)
 LOGO=os.path.join(os.path.dirname(os.path.abspath(__file__)),"assets","logo.png")
-def logo_on(L,y,w=560):
+def logo_on(L,y,w=760):
     """tools/assets/logo.png(메트라이프금융서비스 로고)가 있으면 흰 둥근 판 위에 올린다. 없으면 건너뜀."""
     if not os.path.exists(LOGO): return
     lg=Image.open(LOGO).convert("RGBA"); r=w/lg.width; lg=lg.resize((w,int(lg.height*r)))

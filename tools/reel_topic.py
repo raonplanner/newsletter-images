@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """코너 글용 20초 세로 릴스(1080x1920, 합성 배경음악). reel_promo.py 의 그리기 함수를 재사용한다.
 사용: python3 -I reel_topic.py 입력.json 출력.mp4 [프레임폴더]
-입력: {"theme":"fire|life|pension|etc","label":"의원 화재보험 점검(약 14자)","title":"제목(약 16자, 2줄 이내)",
+입력: {"theme":"fire|life|pension|doctor|medic|tax|check|estate|etc","label":"의원 화재보험 점검(약 14자)","title":"제목(약 16자, 2줄 이내)",
  "points":["항목(약 26자)",3~5개],"cta_extra":"(선택) 🔥 화재보험 견적신청·상담신청","note":"(선택) 면책 한 줄(약 30자)"}
 프레임 확인: f_1.8.png(첫 화면) f_9.5.png(항목) f_18.5.png(마무리)"""
 import sys, json, subprocess, os, tempfile, importlib.util
@@ -11,12 +11,18 @@ globals().update({k:getattr(rp,k) for k in "W H FPS DUR F ease fade wrap layer c
 THEMES={"fire":[((190,60,30),(110,20,60)),((235,110,40),(200,40,70))],
         "life":[((25,40,140),(20,120,190)),((40,60,170),(20,150,200))],
         "pension":[((8,90,105),(22,150,120)),((10,110,120),(40,170,110))],
+        "doctor":[((11,37,69),(27,75,130)),((20,50,95),(40,95,150))],
+        "medic":[((18,55,42),(47,107,79)),((25,75,55),(60,125,95))],
+        "tax":[((15,61,62),(31,122,122)),((20,80,80),(40,140,135))],
+        "check":[((45,27,78),(91,58,140)),((60,38,100),(110,70,160))],
+        "estate":[((30,38,48),(58,71,87)),((40,50,62),(75,90,108))],
         "etc":[((38,28,110),(142,45,150)),((60,40,130),(160,60,160))]}
 def render(cfg,out,fd=None):
     th=THEMES.get(cfg.get("theme","etc"),THEMES["etc"]); b1,b2=grad(*th[0]),grad(*th[1])
     wav=os.path.join(tempfile.mkdtemp(),"bgm.wav"); make_music(wav)
     td=ImageDraw.Draw(Image.new("RGB",(W,H)))
-    pts=cfg["points"][:5]; TOP,BOT=470,1800
+    clean=lambda x:"".join(c for c in x if ord(c)<0x2000 or 0x3000<=ord(c)<0xD7B0 or c in "·—→").replace("☐","").strip()
+    pts=[clean(x) for x in cfg["points"][:5]]; cfg["title"]=clean(cfg["title"]); TOP,BOT=470,1800
     for hs,bs in [(112,66),(104,62),(96,58),(88,54),(80,50),(72,46)]:
         fh,fb=F(hs),F(bs); hl=wrap(td,cfg["title"],fh,W-120)
         if len(hl)>2: continue

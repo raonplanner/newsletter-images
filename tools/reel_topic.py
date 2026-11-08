@@ -2,7 +2,7 @@
 """코너 글용 20초 세로 릴스(1080x1920, 합성 배경음악). reel_promo.py 의 그리기 함수를 재사용한다.
 사용: python3 -I reel_topic.py 입력.json 출력.mp4 [프레임폴더]
 입력: {"theme":"fire|life|pension|doctor|medic|tax|check|estate|etc","label":"의원 화재보험 점검(약 14자)","title":"제목(약 16자, 2줄 이내)",
- "points":["항목(약 26자)",3~5개],"cta_extra":"(선택) 🔥 화재보험 견적신청·상담신청","note":"(선택) 면책 한 줄(약 30자)"}
+ "points":["항목(약 26자)",3~5개],"cta_extra":"(선택) 🔥 화재보험 견적신청·상담신청","note":"(선택) 면책 한 줄(약 30자)","cta":["지금 바로","상담 받으세요"](선택, 2줄 각 10자 이내)}
 프레임 확인: f_1.8.png(첫 화면) f_9.5.png(항목) f_18.5.png(마무리)"""
 import sys, json, subprocess, os, tempfile, importlib.util
 here=os.path.dirname(os.path.abspath(__file__))
@@ -68,7 +68,8 @@ def render(cfg,out,fd=None):
         a=ease((t-15.8)/0.6)
         if a>0:
             L,d=layer()
-            ctext(d,"궁금한 점은",300,F(110),WHITE); ctext(d,"DM으로 문의하세요",440,F(120),YEL)
+            c1,c2=(cfg.get("cta") or ["궁금한 점은","DM으로 문의하세요"])[:2]
+            ctext(d,c1,300,F(110),WHITE); ctext(d,c2,440,F(120 if len(c2)<=10 else 100),YEL)
             d.rounded_rectangle((W/2-110,620,W/2+110,634),radius=7,fill=YEL)
             pill(d,W/2,720,"상담신청 · 프로필 링크",F(70),NAVY,YEL)
             if ex: pill(d,W/2,880,ex,F(54),WHITE,NAVY)

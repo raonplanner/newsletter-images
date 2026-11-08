@@ -80,72 +80,109 @@ def make_music(path):
     st=np.stack([out,out],1)
     with wave.open(path,"w") as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((st*32767).astype("<i2").tobytes())
+def grad(c1,c2):
+    t=np.linspace(0,1,H)[:,None,None]
+    arr=(np.array(c1)*(1-t)+np.array(c2)*t)*np.ones((1,W,1))
+    return Image.fromarray(np.clip(arr,0,255).astype("uint8")).convert("RGBA")
+# 장면별 배경(색을 바꿔 단조로움을 없앤다): 인디고→보라 / 틸→그린 / 오렌지→코랄 / 로열블루→시안
+BGS=[((38,28,110),(142,45,150)),((8,96,110),(22,160,120)),((235,110,40),(225,50,95)),((25,50,160),(20,150,200))]
+PAL=[(255,214,10),(110,231,183),(125,211,252),(253,164,175),(255,190,120)]
+NAVY=(16,32,64); YEL=(255,214,10); COR=(255,107,107)
+def pill(d,cx,y,txt,font,fill,tc):
+    w=d.textlength(txt,font=font); pad=44; h=font.size+34
+    d.rounded_rectangle((cx-w/2-pad,y,cx+w/2+pad,y+h),radius=h//2,fill=fill)
+    d.text((cx-w/2,y+6),txt,font=font,fill=tc)
+def dots(im,t):
+    L,d=layer()
+    for k in range(9):
+        x=(k*137+60*np.sin(t*0.7+k))%W; y=(k*271+40*np.cos(t*0.5+k*1.3)+t*28*(1+k%3))%(H+200)-100
+        r=40+(k%4)*26
+        d.ellipse((x-r,y-r,x+r,y+r),fill=(255,255,255,26 if k%2 else 18))
+    im.alpha_composite(L)
 def render(cfg,out,frames_dir=None):
-    bg=bg_image()
+    bgs=[grad(*c) for c in BGS]
     tmpd=tempfile.mkdtemp(); wav=os.path.join(tmpd,"bgm.wav"); make_music(wav)
     tmp=Image.new("RGB",(W,H)); td=ImageDraw.Draw(tmp)
-    # 주제 카드 레이아웃(글자 크기 자동 축소)
-    for hs,bs in [(72,46),(64,42),(56,38),(50,34)]:
-        fh,fb=F(hs),F(bs,False)
-        hl=wrap(td,cfg["topic_title"],fh,W-2*(120+50))
-        bl=[wrap(td,b,fb,W-2*(120+50)-40) for b in cfg["topic_points"][:5]]
-        tot=len(hl)*(hs+16)+sum(len(x)*(bs+12)+22 for x in bl)+120
-        if tot<=1050: break
+    # 주제 장면: 제목과 항목 카드가 화면을 가득 채우도록 글자 크기를 가장 크게 자동 선택
+    pts=cfg["topic_points"][:5]; TOP,BOT=470,1800
+    for hs,bs in [(112,66),(104,62),(96,58),(88,54),(80,50)]:
+        fh,fb=F(hs),F(bs)
+        hl=wrap(td,cfg["topic_title"],fh,W-120)
+        if len(hl)>2: continue
+        bl=[wrap(td,b,fb,W-60-200-45) for b in pts]
+        ch=[len(x)*(bs+14)+56 for x in bl]
+        tot=sum(ch)+26*(len(ch)-1)
+        if tot<=BOT-TOP-(len(hl)-1)*(hs+10): break
+    ty0=300+len(hl)*(hs+10)+30
+    if ty0<TOP: ty0=TOP
+    extra=max(0,(BOT-ty0-tot)//(len(ch)+1)) if ch else 0
     cmd=["ffmpeg","-y","-f","rawvideo","-pix_fmt","rgb24","-s",f"{W}x{H}","-r",str(FPS),"-i","-","-i",wav,
          "-shortest","-c:v","libx264","-preset","veryfast","-crf","20","-pix_fmt","yuv420p","-movflags","+faststart","-c:a","aac","-b:a","128k",out]
     p=subprocess.Popen(cmd,stdin=subprocess.PIPE,stderr=subprocess.DEVNULL)
-    marks={int(x*FPS) for x in (1.8,6.5,12.5,18.5)}
+    marks={int(x*FPS) for x in (1.8,6.5,9.5,12.5,18.5)}
+    cuts=[4.6,11.5,16.3]
     for i in range(FPS*DUR):
-        t=i/FPS; im=bg.copy().convert("RGBA")
-        a=fade(t,0.0,0.7,4.2,5.0)
+        t=i/FPS
+        # 배경 크로스페이드
+        idx=sum(1 for c in cuts if t>=c); im=bgs[idx].copy()
+        for k,c in enumerate(cuts):
+            if 0<=t-c<0.5 and k<3: im=Image.blend(bgs[k],bgs[k+1],ease((t-c)/0.5))
+        dots(im,t)
+        a=fade(t,0.0,0.6,4.0,4.6)
         if a>0:
             L,d=layer()
-            ctext(d,"대전 FP",560,F(76,False),GOLD)
-            ctext(d,"직무설명회",650,F(150),WHITE)
-            d.rectangle((W/2-80,880,W/2+80,886),fill=GOLD)
-            ctext(d,"매주 금요일",950,F(84),GOLD)
-            ctext(d,"11:30 ~ 13:30",1060,F(100),WHITE)
-            ctext(d,"점심 포함",1200,F(52,False),SOFT)
-            im=apply(im,L,a,dy=(1-a)*30)
-        a=fade(t,4.6,5.3,10.6,11.3)
+            ctext(d,"대전 FP",300,F(110),YEL)
+            ctext(d,"직무설명회",430,F(200),WHITE)
+            d.rounded_rectangle((W/2-110,720,W/2+110,734),radius=7,fill=YEL)
+            ctext(d,"매주 금요일",800,F(150),YEL)
+            ctext(d,"11:30~13:30",980,F(170),WHITE)
+            pill(d,W/2,1260,"점심 포함",F(96),YEL,NAVY)
+            im=apply(im,L,a,dy=(1-a)*40)
+        a=fade(t,4.6,5.2,10.9,11.5)
         if a>0:
             L,d=layer()
-            ctext(d,"대전 FP 직무설명회",290,F(40),GOLD)
-            y0=400; al=255
-            d.rounded_rectangle((90,y0,W-90,y0+tot),radius=40,fill=CARD,outline=CARDLN,width=3)
-            d.rounded_rectangle((90,y0+30,100,y0+tot-30),radius=5,fill=GOLD)
-            ty=y0+50
-            for ln in hl: d.text((140,ty),ln,font=F(hs),fill=WHITE); ty+=hs+16
-            ty+=14
+            ctext(d,"대전 FP 직무설명회",190,F(52),YEL)
+            y=300
+            for ln in hl: ctext(d,ln,y,F(hs),WHITE); y+=hs+10
+            y=ty0+extra
             for k,lines in enumerate(bl):
-                ak=ease((t-(5.9+k*0.5))/0.5)
-                col=SOFT+(int(255*ak),)
-                for j,ln in enumerate(lines):
-                    pre="· " if j==0 else "   "
-                    d.text((140,ty),pre+ln,font=F(bs,False),fill=col); ty+=bs+12
-                ty+=22
+                ak=ease((t-(5.7+k*0.55))/0.45); h=ch[k]
+                if ak>0:
+                    c=PAL[k%len(PAL)]; off=int((1-ak)*120)
+                    cl,cd=layer()
+                    cd.rounded_rectangle((60,y,W-60,y+h),radius=36,fill=c)
+                    cd.ellipse((90,y+h/2-42,174,y+h/2+42),fill=NAVY)
+                    nw=cd.textlength(str(k+1),font=F(52)); cd.text((132-nw/2,y+h/2-34),str(k+1),font=F(52),fill=c)
+                    ty=y+28
+                    for ln in lines: cd.text((200,ty),ln,font=F(bs),fill=NAVY); ty+=bs+14
+                    cl.putalpha(cl.getchannel('A').point(lambda v:int(v*ak)))
+                    L.paste(cl,(off,0),cl)
+                y+=h+26+extra
             im=apply(im,L,a)
-        a=fade(t,10.9,11.6,15.6,16.3)
+        a=fade(t,11.5,12.1,15.7,16.3)
         if a>0:
             L,d=layer()
-            ctext(d,"참석하시면",380,F(56,False),GOLD)
-            d.rounded_rectangle((90,480,W-90,1000),radius=40,fill=CARD,outline=CARDLN,width=3)
-            ctext(d,"점심 제공",540,F(96),WHITE)
-            ctext(d,"+",670,F(70),GOLD)
-            ctext(d,"교통비 2만원",770,F(96),WHITE)
-            ctext(d,"대전 서구 둔산대로117번길 34 4층",1090,F(44),SOFT)
-            ctext(d,"메트라이프금융서비스",1170,F(52),GOLD)
+            ctext(d,"참석하시면",260,F(90),YEL)
+            ctext(d,"점심 제공",460,F(210),WHITE)
+            ctext(d,"+",720,F(150),YEL)
+            ctext(d,"교통비",880,F(150),WHITE)
+            ctext(d,"2만원",1050,F(250),YEL)
+            pill(d,W/2,1420,"매주 금요일 점심",F(76),NAVY,WHITE)
+            ctext(d,"대전 서구 둔산대로117번길 34 4층",1600,F(50),WHITE)
+            ctext(d,"메트라이프금융서비스",1690,F(64),YEL)
+            im=apply(im,L,a,dy=(1-a)*40)
+        a=ease((t-16.3)/0.6)
+        if a>0:
+            L,d=layer()
+            ctext(d,"지금 신청하세요",330,F(140),WHITE)
+            d.rounded_rectangle((W/2-110,540,W/2+110,554),radius=7,fill=YEL)
+            pill(d,W/2,650,"프로필 링크 · 캡션 신청 링크",F(56),NAVY,YEL)
+            ctext(d,"문의",900,F(80),YEL)
+            ctext(d,"010-3224-1517",1010,F(128),WHITE)
+            ctext(d,"송근영",1260,F(130),YEL)
+            ctext(d,"메트라이프금융서비스",1440,F(70),WHITE)
+            ctext(d,"골든트리투자자문 소속",1540,F(56),WHITE)
             im=apply(im,L,a,dy=(1-a)*30)
-        a=ease((t-16.0)/0.7)
-        if a>0:
-            L,d=layer()
-            ctext(d,"지금 신청하세요",520,F(96),WHITE)
-            d.rectangle((W/2-80,700,W/2+80,706),fill=GOLD)
-            ctext(d,"프로필 링크 · 캡션의 신청 링크",770,F(48,False),SOFT)
-            ctext(d,"010-3224-1517",880,F(100),GOLD)
-            ctext(d,"송근영",1060,F(84),WHITE)
-            ctext(d,"메트라이프금융서비스 | 골든트리투자자문 소속",1170,F(36,False),SOFT)
-            im=apply(im,L,a,dy=(1-a)*20)
         rgb=im.convert("RGB")
         if frames_dir and i in marks: rgb.save(os.path.join(frames_dir,f"f_{i/FPS:.1f}.png"))
         p.stdin.write(rgb.tobytes())

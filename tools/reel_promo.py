@@ -48,21 +48,34 @@ def apply(base,lay,a,dy=0):
         al=lay.getchannel("A").point(lambda v:int(v*a)); lay=lay.copy(); lay.putalpha(al)
     base.paste(lay,(0,0),lay); return base
 def make_music(path):
-    """부드러운 코드 진행(C-Am-F-G) 패드+아르페지오, 직접 합성(저작권 없음). 20초, 끝에서 페이드아웃."""
-    sr=44100; n=sr*DUR; t=np.arange(n)/sr
-    prog=[[261.63,329.63,392.00],[220.00,261.63,329.63],[174.61,220.00,261.63],[196.00,246.94,293.66]]
+    """밝고 경쾌한 팝 느낌(112bpm, C-G-Am-F), 통통 튀는 플럭 멜로디+가벼운 킥/하이햇. 직접 합성(저작권 없음). 20초, 끝에서 페이드아웃."""
+    sr=44100; n=sr*DUR; t=np.arange(n)/sr; bpm=112; beat=60.0/bpm
     out=np.zeros(n)
-    seg=DUR/len(prog)*0+5.0
-    for k in range(4):
-        s=int(k*seg*sr); e=int((k+1)*seg*sr); tt=t[s:e]-t[s]
-        env=np.minimum(1,tt/0.6)*np.minimum(1,(seg-tt)/0.6)
-        for f in prog[k]:
-            out[s:e]+=0.10*env*(np.sin(2*np.pi*f*tt)+0.3*np.sin(2*np.pi*2*f*tt))
-        for j in range(int(seg*2)):
-            f=prog[k][j%3]*2; a0=int(j*0.5*sr); a1=min(len(tt),a0+int(0.45*sr))
-            x=np.arange(a1-a0)/sr; ne=np.exp(-x*6)
-            out[s+a0:s+a1]+=0.07*ne*np.sin(2*np.pi*f*x)
-    out*=np.minimum(1,(DUR-t)/1.5)
+    def add(start,sig,g):
+        i=int(start*sr); j=min(n,i+len(sig))
+        if i<n: out[i:j]+=g*sig[:j-i]
+    def pluck(f,dur=0.32):
+        x=np.arange(int(dur*sr))/sr
+        return np.exp(-x*9)*(np.sin(2*np.pi*f*x)+0.35*np.sin(2*np.pi*2*f*x)+0.12*np.sin(2*np.pi*3*f*x))
+    def kick():
+        x=np.arange(int(0.18*sr))/sr
+        return np.exp(-x*22)*np.sin(2*np.pi*(120*np.exp(-x*18)+45)*x)
+    rng=np.random.default_rng(7)
+    def hat():
+        x=np.arange(int(0.05*sr))/sr
+        return np.exp(-x*70)*rng.standard_normal(len(x))
+    chords=[(261.63,329.63,392.0),(196.0,246.94,392.0),(220.0,261.63,329.63),(174.61,220.0,261.63)]
+    mel=[[2,1,2,0,1,2,1,0],[1,2,1,0,2,1,0,1],[1,0,1,2,1,0,2,1],[0,1,2,1,0,2,1,2]]
+    steps=int(DUR/(beat/2))
+    for k in range(steps):
+        tm=k*beat/2; bar=(k//8)%4; ch=chords[bar]
+        f=ch[mel[bar][k%8]]*2
+        add(tm,pluck(f),0.20)
+        if k%2==0: add(tm,pluck(ch[0]/2,0.4),0.16)
+        if k%4==0: add(tm,kick(),0.30)
+        if k%2==1: add(tm,hat(),0.05)
+    add(0,np.zeros(1),0)
+    out*=np.minimum(1,t/0.4)*np.minimum(1,(DUR-t)/1.5)
     out=out/np.max(np.abs(out))*0.5
     st=np.stack([out,out],1)
     with wave.open(path,"w") as w:

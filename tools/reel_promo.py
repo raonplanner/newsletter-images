@@ -92,6 +92,14 @@ def pill(d,cx,y,txt,font,fill,tc):
     w=d.textlength(txt,font=font); pad=44; h=font.size+34
     d.rounded_rectangle((cx-w/2-pad,y,cx+w/2+pad,y+h),radius=h//2,fill=fill)
     d.text((cx-w/2,y+6),txt,font=font,fill=tc)
+LOGO=os.path.join(os.path.dirname(os.path.abspath(__file__)),"assets","logo.png")
+def logo_on(L,y,w=560):
+    """tools/assets/logo.png(메트라이프금융서비스 로고)가 있으면 흰 둥근 판 위에 올린다. 없으면 건너뜀."""
+    if not os.path.exists(LOGO): return
+    lg=Image.open(LOGO).convert("RGBA"); r=w/lg.width; lg=lg.resize((w,int(lg.height*r)))
+    pad=30; d=ImageDraw.Draw(L)
+    d.rounded_rectangle(((W-w)/2-pad,y-pad,(W+w)/2+pad,y+lg.height+pad),radius=36,fill=(255,255,255,255))
+    L.paste(lg,((W-w)//2,y),lg)
 def dots(im,t):
     L,d=layer()
     for k in range(9):
@@ -131,6 +139,7 @@ def render(cfg,out,frames_dir=None):
         a=fade(t,0.0,0.6,4.0,4.6)
         if a>0:
             L,d=layer()
+            logo_on(L,120)
             ctext(d,"대전 FP",300,F(110),YEL)
             ctext(d,"직무설명회",430,F(200),WHITE)
             d.rounded_rectangle((W/2-110,720,W/2+110,734),radius=7,fill=YEL)
@@ -180,8 +189,8 @@ def render(cfg,out,frames_dir=None):
             ctext(d,"문의",900,F(80),YEL)
             ctext(d,"010-3224-1517",1010,F(128),WHITE)
             ctext(d,"송근영",1260,F(130),YEL)
-            ctext(d,"메트라이프금융서비스",1440,F(70),WHITE)
-            ctext(d,"골든트리투자자문 소속",1540,F(56),WHITE)
+            ctext(d,"메트라이프금융서비스",1450,F(84),WHITE)
+            logo_on(L,1620)
             im=apply(im,L,a,dy=(1-a)*30)
         rgb=im.convert("RGB")
         if frames_dir and i in marks: rgb.save(os.path.join(frames_dir,f"f_{i/FPS:.1f}.png"))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""지난 밤 해외경제 이슈 릴스(9:16, 20초, 무음) 생성기.
+"""지난 밤 해외경제 이슈 릴스(9:16, 20초, 경쾌한 합성 음악 포함) 생성기.
 사용: python3 -I reel_econ.py 입력.json 출력.mp4 [프레임확인폴더]
 입력.json 형식은 reel_econ_sample.json 참고. 지수 값·이슈 문구는 검증된 값만 넣는다."""
 import sys, json, subprocess, math, os
@@ -70,8 +70,12 @@ def render(cfg,out,frames_dir=None):
             hh=len(hl)*(hs+14)+len(bl)*(bs+12)+110
             lay_out.append((hl,bl,hh)); tot+=hh+40
         if tot<=1000: break
+    import importlib.util, tempfile
+    here=os.path.dirname(os.path.abspath(__file__))
+    sp=importlib.util.spec_from_file_location("reel_promo",os.path.join(here,"reel_promo.py")); rp=importlib.util.module_from_spec(sp); sp.loader.exec_module(rp)
+    wav=os.path.join(tempfile.mkdtemp(),"bgm.wav"); rp.make_music(wav)
     cmd=["ffmpeg","-y","-f","rawvideo","-pix_fmt","rgb24","-s",f"{W}x{H}","-r",str(FPS),"-i","-",
-         "-f","lavfi","-i","anullsrc=channel_layout=stereo:sample_rate=44100","-shortest",
+         "-i",wav,"-shortest",
          "-c:v","libx264","-preset","veryfast","-crf","20","-pix_fmt","yuv420p","-colorspace","bt709","-color_primaries","bt709","-color_trc","bt709","-movflags","+faststart",
          "-c:a","aac","-b:a","96k",out]
     p=subprocess.Popen(cmd,stdin=subprocess.PIPE,stderr=subprocess.DEVNULL)

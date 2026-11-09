@@ -7,7 +7,7 @@
 import sys, json, subprocess, os, tempfile, importlib.util
 here=os.path.dirname(os.path.abspath(__file__))
 sp=importlib.util.spec_from_file_location("rp",os.path.join(here,"reel_promo.py")); rp=importlib.util.module_from_spec(sp); sp.loader.exec_module(rp)
-globals().update({k:getattr(rp,k) for k in "W H FPS DUR F ease fade wrap layer ctext apply grad pill logo_on dots make_music PAL NAVY YEL WHITE Image ImageDraw".split()})
+globals().update({k:getattr(rp,k) for k in "W H FPS DUR F ease fade wrap layer ctext apply grad pill logo_on dots make_music make_music_calm PAL NAVY YEL WHITE Image ImageDraw".split()})
 THEMES={"fire":[((190,60,30),(110,20,60)),((235,110,40),(200,40,70))],
         "life":[((25,40,140),(20,120,190)),((40,60,170),(20,150,200))],
         "pension":[((8,90,105),(22,150,120)),((10,110,120),(40,170,110))],
@@ -19,7 +19,7 @@ THEMES={"fire":[((190,60,30),(110,20,60)),((235,110,40),(200,40,70))],
         "etc":[((38,28,110),(142,45,150)),((60,40,130),(160,60,160))]}
 def render(cfg,out,fd=None):
     th=THEMES.get(cfg.get("theme","etc"),THEMES["etc"]); b1,b2=grad(*th[0]),grad(*th[1])
-    wav=os.path.join(tempfile.mkdtemp(),"bgm.wav"); make_music(wav)
+    wav=os.path.join(tempfile.mkdtemp(),"bgm.wav"); (make_music_calm if cfg.get("theme")=="life" else make_music)(wav)
     td=ImageDraw.Draw(Image.new("RGB",(W,H)))
     clean=lambda x:"".join(c for c in x if ord(c)<0x2000 or 0x3000<=ord(c)<0xD7B0 or c in "·—→").replace("☐","").strip()
     pts=[clean(x) for x in cfg["points"][:5]]; cfg["title"]=clean(cfg["title"]); TOP,BOT=470,1800

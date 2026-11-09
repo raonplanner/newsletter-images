@@ -88,6 +88,31 @@ def make_music(path):
     with wave.open(path,"w") as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((st*32767).astype("<i2").tobytes())
 
+def make_music_calm(path):
+    """차분한 피아노 아르페지오(88bpm, C-Am-F-G) — 사망보장·생명보험 영상용. 직접 합성(저작권 없음)."""
+    sr=44100; n=sr*DUR; t=np.arange(n)/sr; beat=60.0/88
+    out=np.zeros(n)
+    def add(s,sig,g):
+        i=int(s*sr); j=min(n,i+len(sig))
+        if i<n: out[i:j]+=g*sig[:j-i]
+    def note(f,d):
+        x=np.arange(int(d*sr))/sr
+        return np.exp(-x*3.2)*(np.sin(2*np.pi*f*x)+0.4*np.sin(2*np.pi*2*f*x)+0.15*np.sin(2*np.pi*3*f*x))*np.minimum(1,x/0.005)
+    def padn(f,d):
+        x=np.arange(int(d*sr))/sr
+        return (np.sin(2*np.pi*f*x)+np.sin(2*np.pi*f*1.003*x))*0.5*np.minimum(1,x/0.8)*np.minimum(1,(d-x)/0.8)
+    C=[(261.63,329.63,392.0),(220.0,261.63,329.63),(174.61,220.0,261.63),(196.0,246.94,293.66)]; R=[130.81,110.0,87.31,98.0]
+    arp=[0,1,2,1,2,1,0,1]; bl=4*beat
+    for b in range(int(DUR/bl)+1):
+        ch=C[b%4]; t0=b*bl
+        for f in ch: add(t0,padn(f,bl),0.07)
+        add(t0,note(R[b%4],bl*0.9),0.22)
+        for k in range(8): add(t0+k*beat/2,note(ch[arp[k]]*2,0.9),0.16)
+    out*=np.minimum(1,t/1.0)*np.minimum(1,(DUR-t)/1.5); out=out/np.max(np.abs(out))*0.55
+    st=np.stack([out,out],1)
+    with wave.open(path,"w") as w:
+        w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr); w.writeframes((st*32767).astype("<i2").tobytes())
+
 def grad(c1,c2):
     t=np.linspace(0,1,H)[:,None,None]
     arr=(np.array(c1)*(1-t)+np.array(c2)*t)*np.ones((1,W,1))

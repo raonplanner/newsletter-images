@@ -1,0 +1,40 @@
+name: 인스타 예약 게시
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ig-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: 대기열 게시
+        id: pub
+        continue-on-error: true
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: python3 -I tools/ig_publish.py .
+      - name: 결과 기록
+        run: |
+          if [ -n "$(git status --porcelain social)" ]; then
+            git config user.name "ig-publish"
+            git config user.email "actions@users.noreply.github.com"
+            git add social/*/published.json
+            git commit -m "게시 결과 기록"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: 실패 알림
+        if: steps.pub.outcome == 'failure'
+        run: exit 1

@@ -24,6 +24,9 @@ jobs:
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          # 'Instagram 로그인' 방식 토큰은 graph.instagram.com 을 쓴다
+          IG_API_BASE: https://graph.instagram.com
+          IG_GRAPH_VERSION: v23.0
         run: python3 -I tools/ig_publish.py .
       - name: 결과 기록
         run: |

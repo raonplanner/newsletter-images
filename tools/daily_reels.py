@@ -37,7 +37,7 @@ def yahoo(sym):
     for _ in range(3):
         try:
             r=urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"Mozilla/5.0"}),timeout=20)
-            j=json.load(r)["result"][0]; ts=j["timestamp"]; cl=j["indicators"]["quote"][0]["close"]; off=j["meta"].get("gmtoffset",0)
+            j=json.load(r)["chart"]["result"][0]; ts=j["timestamp"]; cl=j["indicators"]["quote"][0]["close"]; off=j["meta"].get("gmtoffset",0)
             pts=[(dt.datetime.utcfromtimestamp(t+off).date(),c) for t,c in zip(ts,cl) if c is not None]
             return pts
         except Exception as e: err=e

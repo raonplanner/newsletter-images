@@ -30,7 +30,7 @@ jobs:
       - name: 릴스 제작
         env:
           DAILY_DRY: ${{ github.event.inputs.dry == 'true' && '1' || '' }}
-        run: python3 -I tools/daily_reels.py .
+        run: python3 tools/daily_reels.py .
       - name: 결과 저장
         run: |
           if [ -n "$(git status --porcelain social)" ]; then

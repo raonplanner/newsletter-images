@@ -1,0 +1,36 @@
+name: 인스타 주간 성과 수집
+
+on:
+  schedule:
+    - cron: "10 23 * * 0"   # 매주 월요일 08:10 (한국 시간)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ig-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: 성과 수집
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_API_BASE: https://graph.instagram.com
+          IG_GRAPH_VERSION: v23.0
+        run: python3 -I tools/ig_report.py .
+      - name: 결과 기록
+        run: |
+          if [ -n "$(git status --porcelain report)" ]; then
+            git config user.name "ig-report"
+            git config user.email "actions@users.noreply.github.com"
+            git add report
+            git commit -m "인스타 주간 성과 기록"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi

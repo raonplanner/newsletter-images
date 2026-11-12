@@ -117,7 +117,29 @@ def load(path, default):
         return default
 
 
+def check():
+    """게시 없이 토큰·계정·게시 한도만 확인한다(IG_CHECK=1)."""
+    if not (IG_ID and TOKEN):
+        print("IG_USER_ID / IG_ACCESS_TOKEN 이 비어 있음")
+        return 1
+    try:
+        me = call("GET", "me", {"fields": "user_id,username,account_type"})
+        print("토큰 계정: @%s (%s) user_id=%s" % (
+            me.get("username"), me.get("account_type"), me.get("user_id") or me.get("id")))
+        print("IG_USER_ID 설정값 일치: %s" % (
+            str(IG_ID) in (str(me.get("user_id")), str(me.get("id")))))
+        lim = call("GET", IG_ID + "/content_publishing_limit",
+                   {"fields": "quota_usage,config"})
+        print("게시 한도 확인: %s" % json.dumps(lim, ensure_ascii=False))
+        return 0
+    except Exception as e:
+        print("점검 실패: %s" % scrub(str(e))[:400])
+        return 1
+
+
 def main():
+    if os.environ.get("IG_CHECK") == "1":
+        return check()
     now = dt.datetime.now(dt.timezone.utc)
     if not DRY and not (IG_ID and TOKEN):
         print("IG_USER_ID / IG_ACCESS_TOKEN 이 없어 게시하지 않음(설정 전).")

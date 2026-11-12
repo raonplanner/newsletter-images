@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+    inputs:
+      check:
+        description: "게시 없이 토큰·계정만 점검 (true/false)"
+        default: "false"
 
 permissions:
   contents: write
@@ -27,6 +31,7 @@ jobs:
           # 'Instagram 로그인' 방식 토큰은 graph.instagram.com 을 쓴다
           IG_API_BASE: https://graph.instagram.com
           IG_GRAPH_VERSION: v23.0
+          IG_CHECK: ${{ github.event.inputs.check == 'true' && '1' || '0' }}
         run: python3 -I tools/ig_publish.py .
       - name: 결과 기록
         run: |

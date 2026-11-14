@@ -95,6 +95,13 @@ for i,(name,cfg,cap) in enumerate(reels[:len(slots)],1):
     f=os.path.join(out,f"post{i}.mp4"); rs.render(cfg,f)
     queue.append({"id":f"post{i}","time":slots[i-1].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":[RAW%(ymd,i)],"caption":cap})
     log.append(f"슬롯 {slots[i-1]:%H:%M} post{i} = {name}")
+if wd==5 and today>=dt.date(2026,11,21):  # 토요일 21:05 직업설명회 릴스(매주)
+    import shutil; shutil.copy(os.path.join(here,"assets","job_promo.mp4"),os.path.join(out,"promo.mp4"))
+    cap=("📍대전 | 메트라이프금융서비스 직업설명회\n막연하게 모르는 것보다, 한 번 직접 들어보세요.\n인생의 전환점이 될 수 있습니다.\n\n"
+         "🗓 매주 금요일 10:30~12:30\n📍 대전 서구 둔산대로117번길 34 4층 (만년동)\n📝 신청 https://naver.me/Fm3lll5s\n📞 010-3224-1517\n\n"
+         "#대전서구 #대전유성구 #보험설계사 #채용 #취업")
+    queue.append({"id":"promo","time":today.strftime("%Y-%m-%dT21:05:00+09:00"),"type":"REELS","media":["https://raw.githubusercontent.com/raonplanner/newsletter-images/main/social/%s/promo.mp4"%ymd],"caption":cap})
+    log.append("슬롯 21:05 promo = 직업설명회")
 json.dump(queue,open(os.path.join(out,"queue.json"),"w",encoding="utf8"),ensure_ascii=False,indent=1)
 open(os.path.join(out,"log.txt"),"w",encoding="utf8").write("\n".join(log)+f"\n다음 구성: {'B' if AB=='A' else 'A'}\n")
 print("\n".join(log))

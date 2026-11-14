@@ -156,8 +156,9 @@ def build(d):
     t.append("■ 자격\n" + "\n".join(f"{a}" + (f" ({b})" if b else "") + " — " + (f"{lab} {val}" if lab else val) for a, b, lab, val in QUAL))
     h.append(f'<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr><td {bg(NAVY)}color:#ffffff;text-align:center;padding:14px 12px;line-height:1.6">'
              f'<div style="font-size:14px;font-weight:bold">{SIGN}</div><div style="font-size:18px;font-weight:bold;white-space:nowrap">{PHONE}</div>'
+             f'<div style="font-size:14px;margin-top:4px;white-space:nowrap">인스타그램 DM · {IG_DM}</div>'
              f'<div style="font-size:12px;color:#c9d6ee;margin-top:6px">{REPLY}</div></td></tr></table>')
-    t.append(f"{SIGN}\n{PHONE}\n{REPLY}")
+    t.append(f"{SIGN}\n{PHONE}\n인스타그램 DM · {IG_DM}\n{REPLY}")
     kr_w = "휴장" if d.get("kr_closed") else "마감"
     us_w = "휴장" if d.get("us_closed") else "마감"
     src = f'코스피·환율 {d.get("kr_date", "")} {kr_w} · 미국 {d.get("us_date", "")} {us_w} · 정보 제공용'

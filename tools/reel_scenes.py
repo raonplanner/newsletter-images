@@ -16,6 +16,15 @@ W,H,FPS,F,ease,wrap,layer,ctext,apply,grad,pill,logo_on,PAL,NAVY,YEL,WHITE,Image
 SEC=2.5
 BGS=[((38,28,110),(142,45,150)),((8,96,110),(22,160,120)),((25,50,160),(20,150,200)),((45,27,78),(91,58,140)),((20,50,95),(40,95,150))]
 CALM=[((11,37,69),(27,75,130)),((20,50,95),(40,95,150)),((15,61,62),(31,122,122))]
+THEMES=[("해외경제",((10,45,100),(30,120,200))),("약사",((10,80,60),(30,150,100))),("치과",((10,80,60),(30,150,100))),("수의사",((10,80,60),(30,150,100))),("한의사",((10,80,60),(30,150,100))),
+ ("의사",((22,34,70),(60,84,150))),("전문의",((22,34,70),(60,84,150))),("개원의",((22,34,70),(60,84,150))),("봉직의",((22,34,70),(60,84,150))),
+ ("세금",((8,96,110),(22,160,150))),("연말정산",((8,96,110),(22,160,150))),("화재",((110,30,20),(200,80,45))),
+ ("연금",((120,70,10),(200,130,35))),("종신",((90,25,50),(160,55,95))),("사망",((90,25,50),(160,55,95))),("보험",((90,25,50),(160,55,95))),("정기",((90,25,50),(160,55,95)))]
+def theme_pal(label):
+    for k,c in THEMES:
+        if k in label:
+            lt=lambda t:tuple(min(255,v+14) for v in t); return [c,(lt(c[0]),lt(c[1]))]
+    return None
 UP=(255,120,120); DOWN=(130,180,255)
 clean=lambda x:"".join(c for c in x if ord(c)<0x2000 or 0x3000<=ord(c)<0xD7B0 or c in "·—→%,.()").strip()
 def fit(td,text,sizes,maxw,maxlines):
@@ -71,7 +80,7 @@ def render(cfg,out,fd=None):
     sc=cfg["scenes"]; n=len(sc); assert 4<=n<=6, "장면은 4~6개"
     dur=n*SEC; rp.DUR=int(dur+0.99)
     wav=os.path.join(tempfile.mkdtemp(),"bgm.wav"); (rp.make_music_calm if cfg.get("calm") else rp.make_music)(wav)
-    pal=CALM if cfg.get("calm") else BGS; bgs=[grad(*pal[i%len(pal)]) for i in range(n)]
+    pal=theme_pal(cfg.get("label","")) or (CALM if cfg.get("calm") else BGS); bgs=[grad(*pal[i%len(pal)]) for i in range(n)]
     td=ImageDraw.Draw(Image.new("RGB",(W,H))); cards=[x for x in sc if x["style"]=="card"]
     for j,x in enumerate(cards): x["_no"]=j+1; x["_tot"]=len(cards)
     Ls=[draw_scene(s,i,n,cfg,td) for i,s in enumerate(sc)]  # i=0 q; card k=i
@@ -81,8 +90,8 @@ def render(cfg,out,fd=None):
     for i in range(int(dur*FPS)):
         t=i/FPS; k=min(n-1,int(t/SEC)); lt=t-k*SEC
         im=bgs[k].copy()
-        a=ease(lt/0.35)*(1 if k==n-1 else 1-ease((lt-(SEC-0.3))/0.3))
-        im=apply(im,Ls[k],a,dy=(1-ease(lt/0.35))*40)
+        a=(1 if k==0 else ease(lt/0.35))*(1 if k==n-1 else 1-ease((lt-(SEC-0.3))/0.3))
+        im=apply(im,Ls[k],a,dy=0 if k==0 else (1-ease(lt/0.35))*40)
         rgb=im.convert("RGB")
         if fd and abs(lt-1.4)<1/FPS/2+1e-6: rgb.save(os.path.join(fd,f"s{k+1}.png"))
         p.stdin.write(rgb.tobytes())

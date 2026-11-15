@@ -67,12 +67,13 @@ def econ_reel(e):
          f"\n{word}. 원/달러 {fxs}, 미국 10년물 금리 {e['tn']:.2f}%예요.\n💬 궁금한 점은 DM으로 남겨주세요 (프로필 링크 → 상담신청)\n참고용 정보이며 투자 권유가 아닙니다.\n#생명보험 #비과세 #연금 #경제공부 #재테크")
     return cfg,cap
 def topic_reel(it):
-    sc=[{"style":"q","lines":[it["q"]]}]+[{"style":"card","head":h,"lines":l} for h,l in it["cards"]]
-    sc.append({"style":"close","line":"이렇게 준비하는 게 좋아요","sub":it["sub"],"note":it["note"],**({"extra":it["extra"]} if it.get("extra") else {})})
+    # 호기심 유발형: 핵심 포인트 2개만 짧게 보여 주고 자세한 내용은 DM으로 유도(구체 설명·수치는 싣지 않음)
+    cards=it["cards"][:2]
+    sc=[{"style":"q","lines":[it["q"]]}]+[{"style":"card","head":h,"lines":l} for h,l in cards]
+    sc.append({"style":"close","line":"이렇게 확인해 보는 게 좋아요","sub":"내 경우는 어떨지 궁금하다면","note":it["note"],**({"extra":it["extra"]} if it.get("extra") else {})})
     cfg={"label":it["label"],"calm":it.get("calm",False),"scenes":sc}
-    lines=[x for _,l in it["cards"] for x in l]
-    cta="💬 "+("화재보험 견적신청·상담신청은 " if it.get("extra") else "궁금한 점은 ")+"DM으로 남겨주세요 (프로필 링크 → 상담신청)"
-    cap=it["q"]+"\n"+"\n".join("✔ "+x for x in lines)+"\n"+it["note"]+".\n"+cta+"\n#생명보험 #비과세 #연금 "+it["tags"]
+    cta="💬 "+("화재보험 견적신청·상담신청은 " if it.get("extra") else "자세한 내용이 궁금하다면 ")+"DM으로 남겨주세요 (프로필 링크 → 상담신청)"
+    cap=it["q"]+"\n"+"\n".join("✔ "+h for h,_ in cards)+"\n"+it["note"]+".\n"+cta+"\n#생명보험 #비과세 #연금 "+it["tags"]
     return cfg,cap
 n=today.toordinal(); AB="A" if n%2==0 else "B"; ix=(n//2)%4
 pick=lambda k,off=0: bank[k][((((n-2)//4)*2+n%2)%len(bank[k])) if k=="worker" else ((n//2)%len(bank[k])) if k=="pension" else (ix+off)%4]

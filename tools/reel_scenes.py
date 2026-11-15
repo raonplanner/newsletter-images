@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""장면형 릴스(1080x1920, 장면당 2.5초, 4~6장면=10~15초, 합성 배경음악). reel_promo.py 의 그리기 함수를 재사용.
+"""장면형 릴스(1080x1920, 장면당 3초, 4~6장면=10~15초, 합성 배경음악). reel_promo.py 의 그리기 함수를 재사용.
 사용: python3 -I tools/reel_scenes.py 입력.json 출력.mp4 [프레임확인폴더]
 입력: {"calm":false(사망보장 글은 true=차분한 음악),"label":"약 14자",
  "scenes":[
@@ -7,13 +7,13 @@
   {"style":"card","head":"핵심(약 12자)","lines":["설명 2~4줄(약 18자/줄)"]},  # 2~4장면 (글자 5~6줄 이내)
   {"style":"indices","head":"11/12(목) 미국 마감","rows":[["다우",52297.09,-0.36],...],"foot":"한 줄"},
   {"style":"close","line":"이렇게 준비하는 게 좋아요(정리 한 줄)","sub":"(선택)","note":"(선택 면책)","extra":"(선택 pill)"}]}
-장면 4~6개, 장면당 2.5초."""
+장면 4~6개, 장면당 3초."""
 import sys, json, subprocess, os, importlib.util, tempfile
 here=os.path.dirname(os.path.abspath(__file__))
 sp=importlib.util.spec_from_file_location("rp",os.path.join(here,"reel_promo.py")); rp=importlib.util.module_from_spec(sp); sp.loader.exec_module(rp)
 g=rp.__dict__
 W,H,FPS,F,ease,wrap,layer,ctext,apply,grad,pill,logo_on,PAL,NAVY,YEL,WHITE,Image,ImageDraw=[g[k] for k in "W H FPS F ease wrap layer ctext apply grad pill logo_on PAL NAVY YEL WHITE Image ImageDraw".split()]
-SEC=2.5
+SEC=3.0
 BGS=[((38,28,110),(142,45,150)),((8,96,110),(22,160,120)),((25,50,160),(20,150,200)),((45,27,78),(91,58,140)),((20,50,95),(40,95,150))]
 CALM=[((11,37,69),(27,75,130)),((20,50,95),(40,95,150)),((15,61,62),(31,122,122))]
 THEMES=[("해외경제",((10,45,100),(30,120,200))),("약사",((10,80,60),(30,150,100))),("치과",((10,80,60),(30,150,100))),("수의사",((10,80,60),(30,150,100))),("한의사",((10,80,60),(30,150,100))),

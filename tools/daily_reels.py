@@ -75,7 +75,7 @@ def topic_reel(it):
     cap=it["q"]+"\n"+"\n".join("✔ "+x for x in lines)+"\n"+it["note"]+".\n"+cta+"\n#생명보험 #비과세 #연금 "+it["tags"]
     return cfg,cap
 n=today.toordinal(); AB="A" if n%2==0 else "B"; ix=(n//2)%4
-pick=lambda k,off=0: bank[k][((((n-2)//4)*2+n%2)%len(bank[k])) if k=="worker" else (ix+off)%4]
+pick=lambda k,off=0: bank[k][((((n-2)//4)*2+n%2)%len(bank[k])) if k=="worker" else ((n//2)%len(bank[k])) if k=="pension" else (ix+off)%4]
 WK=(n//2)%2==1  # 2번째 슬롯: 의사·의료인 코너와 직장인 직종 코너 번갈아
 plan=[("econ",None),("worker" if WK else ("doctor" if AB=="A" else "medic"),None),("tax" if AB=="A" else "life",None),("check" if AB=="A" else "pension",None)]
 if wd in (1,4): plan[3]=("fire",None)

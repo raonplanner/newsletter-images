@@ -29,7 +29,7 @@ def slot(h):
     t=base+dt.timedelta(hours=h); m=(t.minute+2)//5*5; t=t.replace(minute=0)+dt.timedelta(minutes=m)
     if wd<5 and dt.time(16,5)<=t.time()<=dt.time(17,35): t=t.replace(hour=17,minute=40)
     return t
-slots=[slot(h) for h in (2,6,10,14)]
+slots=[slot(2),slot(6),base.replace(hour=19,minute=40)]  # 하루 3개: 아침·낮·저녁(19:40)
 def yahoo(sym):
     if os.environ.get('YAHOO_MOCK'):  # 시험용
         return [(dt.date.fromisoformat(a),b) for a,b in json.load(open(os.environ['YAHOO_MOCK']))[sym]]
@@ -76,12 +76,12 @@ def topic_reel(it):
     cap=it["q"]+"\n"+"\n".join("✔ "+h for h,_ in cards)+"\n"+it["note"]+".\n"+cta+"\n#생명보험 #비과세 #연금 "+it["tags"]
     return cfg,cap
 n=today.toordinal(); AB="A" if n%2==0 else "B"; ix=(n//2)%4
-pick=lambda k,off=0: bank[k][((((n-2)//4)*2+n%2)%len(bank[k])) if k=="worker" else ((n//2)%len(bank[k])) if k=="pension" else (ix+off)%4]
+pick=lambda k,off=0: bank[k][((((n-2)//4)*2+n%2)%len(bank[k])) if k=="worker" else ((n//4+off)%len(bank[k]))]
 WK=(n//2)%2==1  # 2번째 슬롯: 의사·의료인 코너와 직장인 직종 코너 번갈아
-plan=[("econ",None),("worker" if WK else ("doctor" if AB=="A" else "medic"),None),("tax" if AB=="A" else "life",None),("check" if AB=="A" else "pension",None)]
-if wd in (1,4): plan[3]=("fire",None)
-if wd>=5: plan=plan[:3]
+plan=[("econ",None),("worker" if WK else ("doctor" if AB=="A" else "medic"),None),(["tax","life","pension","check"][n%4],None)]  # 3번째 슬롯: 세금·생명보험·연금·가입자점검 4일 주기 순환
+if wd in (1,4): plan[2]=("fire",None)
 reels=[]; log=[f"구성: {AB}\n{today} ({'월화수목금토일'[wd]}) 일출 {sr:%H:%M}. GitHub Actions 자동 제작(tools/daily_reels.py)."]
+fb=False
 for k,_ in plan:
     if k=="econ":
         try:
@@ -89,12 +89,13 @@ for k,_ in plan:
         except Exception as ex: e=None; log.append(f"경제 릴스 조회 실패({type(ex).__name__}) -> 대체 소재")
         if e: reels.append(("해외경제 마감",)+econ_reel(e)); log.append(f"해외경제: {e['date']} 종가 {e['rows']} 환율 {e['fx']} 10년물 {e['tn']} (Yahoo Finance)"); continue
         if k=="econ" and not any("조회 실패" in x for x in log): log.append("경제 릴스 생략(휴장·일요일·날짜 불일치) -> 대체 소재")
-        k="pension"
-    off=3 if k=="fire" and wd==4 else 0
+        k="pension"; fb=True
+    off=3 if k=="fire" and wd==4 else (1 if fb else 0)
+    fb=False
     it=pick(k,off); reels.append((it["label"],)+topic_reel(it)); log.append(f"{it['label']}: {it['q']}")
 queue=[]
 EVENT_DAYS=(dt.date(2026,11,16),dt.date(2026,11,18),dt.date(2026,11,20))  # 11/21(토) 행사 안내: 4번째 릴스 대신(하루 5개 상한)
-for i,(name,cfg,cap) in enumerate(reels[:min(len(slots),3 if today in EVENT_DAYS else len(slots))],1):
+for i,(name,cfg,cap) in enumerate(reels[:min(len(slots),2 if today in EVENT_DAYS else len(slots))],1):
     f=os.path.join(out,f"post{i}.mp4"); rs.render(cfg,f)
     queue.append({"id":f"post{i}","time":slots[i-1].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":[RAW%(ymd,i)],"caption":cap})
     log.append(f"슬롯 {slots[i-1]:%H:%M} post{i} = {name}")

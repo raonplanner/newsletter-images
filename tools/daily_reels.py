@@ -94,18 +94,23 @@ for k,_ in plan:
     fb=False
     it=pick(k,off); reels.append((it["label"],)+topic_reel(it)); log.append(f"{it['label']}: {it['q']}")
 queue=[]
-EVENT_DAYS=(dt.date(2026,11,16),dt.date(2026,11,18),dt.date(2026,11,20))  # 11/21(토) 행사 안내: 4번째 릴스 대신(하루 5개 상한)
-for i,(name,cfg,cap) in enumerate(reels[:min(len(slots),2 if today in EVENT_DAYS else len(slots))],1):
+JOB_DAYS=(dt.date(2026,11,17),dt.date(2026,11,18),dt.date(2026,11,19),dt.date(2026,11,20))  # 11/21(토) 직업설명회 직전: 아침·낮 슬롯을 직업설명회 릴스로(우선)
+JOB_CAP=("📍대전 | 메트라이프금융서비스 직업설명회\n11/21(토) 오전 10:30, 직접 들어보세요.\n막연하게 모르는 것보다, 한 번 참석해 들어보는 것이 인생의 전환점이 될 수 있습니다.\n\n"
+         "🗓 11/21(토) 오전 10:30 (매주 금요일 10:30~12:30에도 진행)\n📍 대전 서구 둔산대로117번길 34 4층 (만년동)\n📝 신청 https://naver.me/Fm3lll5s\n📞 010-3224-1517\n\n"
+         "#대전서구 #대전유성구 #보험설계사 #채용 #취업")
+if today in JOB_DAYS:
+    import shutil; shutil.copy(os.path.join(here,"assets","job_event.mp4"),os.path.join(out,"event.mp4"))
+    for i in (1,2):
+        queue.append({"id":f"event{i}","time":slots[i-1].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":["https://raw.githubusercontent.com/raonplanner/newsletter-images/main/social/%s/event.mp4"%ymd],"caption":JOB_CAP})
+        log.append(f"슬롯 {slots[i-1]:%H:%M} event{i} = 11/21 직업설명회 안내(우선)")
+    name,cfg,cap=reels[2]; f=os.path.join(out,"post3.mp4"); rs.render(cfg,f)
+    queue.append({"id":"post3","time":slots[2].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":[RAW%(ymd,3)],"caption":cap})
+    log.append(f"슬롯 {slots[2]:%H:%M} post3 = {name}")
+else:
+  for i,(name,cfg,cap) in enumerate(reels[:len(slots)],1):
     f=os.path.join(out,f"post{i}.mp4"); rs.render(cfg,f)
     queue.append({"id":f"post{i}","time":slots[i-1].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":[RAW%(ymd,i)],"caption":cap})
     log.append(f"슬롯 {slots[i-1]:%H:%M} post{i} = {name}")
-if today in EVENT_DAYS:  # 월·수·금 21:05 행사 안내 릴스
-    import shutil; shutil.copy(os.path.join(here,"assets","job_event.mp4"),os.path.join(out,"event.mp4"))
-    cap=("📍대전 | 메트라이프금융서비스 직업설명회\n11/21(토) 오전 10:30, 직접 들어보세요.\n막연하게 모르는 것보다, 한 번 참석해 들어보는 것이 인생의 전환점이 될 수 있습니다.\n\n"
-         "🗓 11/21(토) 오전 10:30 (매주 금요일 10:30~12:30에도 진행)\n📍 대전 서구 둔산대로117번길 34 4층 (만년동)\n📝 신청 https://naver.me/Fm3lll5s\n📞 010-3224-1517\n\n"
-         "#대전서구 #대전유성구 #보험설계사 #채용 #취업")
-    queue.append({"id":"event","time":today.strftime("%Y-%m-%dT21:05:00+09:00"),"type":"REELS","media":["https://raw.githubusercontent.com/raonplanner/newsletter-images/main/social/%s/event.mp4"%ymd],"caption":cap})
-    log.append("슬롯 21:05 event = 11/21 행사 안내(4번째 릴스 대체)")
 if wd==5 and today>=dt.date(2026,11,28):  # 토요일 21:05 직업설명회 릴스(매주)
     import shutil; shutil.copy(os.path.join(here,"assets","job_promo.mp4"),os.path.join(out,"promo.mp4"))
     cap=("📍대전 | 메트라이프금융서비스 직업설명회\n막연하게 모르는 것보다, 한 번 직접 들어보세요.\n인생의 전환점이 될 수 있습니다.\n\n"

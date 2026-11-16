@@ -98,11 +98,27 @@ JOB_DAYS=(dt.date(2026,11,17),dt.date(2026,11,18),dt.date(2026,11,19),dt.date(20
 JOB_CAP=("📍대전 | 메트라이프금융서비스 직업설명회\n11/21(토) 오전 10:30, 직접 들어보세요.\n막연하게 모르는 것보다, 한 번 참석해 들어보는 것이 인생의 전환점이 될 수 있습니다.\n\n"
          "🗓 11/21(토) 오전 10:30 (매주 금요일 10:30~12:30에도 진행)\n📍 대전 서구 둔산대로117번길 34 4층 (만년동)\n📝 신청 https://naver.me/Fm3lll5s\n📞 010-3224-1517\n\n"
          "#대전서구 #대전유성구 #보험설계사 #채용 #취업")
+JOB_NOTE="제도 내용·조건은 설명회에서 안내해 드려요"
+JOB=[  # 11/17~11/20 아침·낮 8편: 메트라이프금융서비스 홈페이지 '인재채용'(역량지원시스템·성장지원프로그램·FP 지원) 내용만 사용, 편마다 다른 주제(금액·MDRT 수치는 싣지 않음)
+ ("보험설계사, 혼자 시작해야 할까요?",[("신인에겐 18개월 멘토링",["1:1 밀착 코칭","멘토와 함께 현장 동행"]),("입문 교육 후 위촉",["처음부터 천천히 배워요"])],"처음이 궁금하다면"),
+ ("입사까지 어떤 과정을 거칠까요?",[("5단계로 진행돼요",["오리엔테이션","입사설명회","전문선발과정","입문교육 → 위촉"]),("그 첫걸음이 설명회",["궁금한 점을 직접 물어보세요"])],"과정이 궁금하다면"),
+ ("설계사 교육, 어디까지 받을 수 있을까요?",[("특화 교육 과정",["은퇴설계 코칭 전문가","법인컨설팅 전문가","외화보험 판매 전문가"]),("정규 교육부터 자격 과정까지",["신인·경력 과정 운영"])],"교육이 궁금하다면"),
+ ("재무설계는 어디서 배울까요?",[("3단계 재무설계 과정",["Financial Planning 전문가 양성"]),("세무·부동산 테마 컨퍼런스",["보장분석 프로그램도 활용"])],"배움이 궁금하다면"),
+ ("설계사의 하루는 어떤 도구로 움직일까요?",[("한 곳에서 처리",["가입설계 · 청약","보장분석 · 계약관리"]),("교육도 모바일로",["언제 어디서나 수강"])],"일하는 방식이 궁금하다면"),
+ ("처음 2년, 어떤 지원이 있을까요?",[("위촉 후 정착 지원",["초기 2년 지원 제도 운영"]),("매주 한 건, W Challenge",["꾸준함을 응원하는 시상"])],"지원이 궁금하다면"),
+ ("오래 일하는 사람을 위한 제도가 있을까요?",[("장기 활동 지원 프로그램",["행복 디딤돌 제도 운영"]),("성과에 따라 해외 시상 행사도",["연 1회 해외 컨벤션"])],"제도가 궁금하다면"),
+ ("내일 오전, 직업이 궁금하다면?",[("내일 오전 10:30",["대전 서구 둔산대로117번길 34 4층 (만년동)"]),("들어보고 판단하세요",["부담 없이 질문해 보세요"])],"내일 직접 들어보세요"),
+]
 if today in JOB_DAYS:
-    import shutil; shutil.copy(os.path.join(here,"assets","job_event.mp4"),os.path.join(out,"event.mp4"))
     for i in (1,2):
-        queue.append({"id":f"event{i}","time":slots[i-1].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":["https://raw.githubusercontent.com/raonplanner/newsletter-images/main/social/%s/event.mp4"%ymd],"caption":JOB_CAP})
-        log.append(f"슬롯 {slots[i-1]:%H:%M} event{i} = 11/21 직업설명회 안내(우선)")
+        q,cards,cl=JOB[(today-JOB_DAYS[0]).days*2+i-1]
+        sc=[{"style":"q","lines":[q]}]+[{"style":"card","head":h,"lines":l} for h,l in cards]+[{"style":"close","line":"11/21(토) 10:30","sub":"오전 직업설명회 · "+cl,"note":JOB_NOTE}]
+        f=os.path.join(out,f"event{i}.mp4"); rs.render({"label":"직업설명회","calm":False,"scenes":sc},f)
+        cap=(q+"\n"+"\n".join("✔ "+h for h,_ in cards)+"\n\n📍대전 | 메트라이프금융서비스 직업설명회\n막연하게 모르는 것보다, 한 번 직접 들어보세요.\n\n"
+             "🗓 11/21(토) 오전 10:30 (매주 금요일 10:30~12:30에도 진행)\n📍 대전 서구 둔산대로117번길 34 4층 (만년동)\n📝 신청 https://naver.me/Fm3lll5s\n📞 010-3224-1517\n\n"
+             "#대전서구 #대전유성구 #보험설계사 #채용 #취업")
+        queue.append({"id":f"event{i}","time":slots[i-1].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":["https://raw.githubusercontent.com/raonplanner/newsletter-images/main/social/%s/event%d.mp4"%(ymd,i)],"caption":cap})
+        log.append(f"슬롯 {slots[i-1]:%H:%M} event{i} = 직업설명회: {q}")
     name,cfg,cap=reels[2]; f=os.path.join(out,"post3.mp4"); rs.render(cfg,f)
     queue.append({"id":"post3","time":slots[2].strftime("%Y-%m-%dT%H:%M:00+09:00"),"type":"REELS","media":[RAW%(ymd,3)],"caption":cap})
     log.append(f"슬롯 {slots[2]:%H:%M} post3 = {name}")

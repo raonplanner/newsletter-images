@@ -14,7 +14,7 @@
   IG_ACCESS_TOKEN  게시 권한(instagram_content_publish)이 있는 토큰
   IG_GRAPH_VERSION (선택) 예: v25.0. 비우면 앱 기본 버전
   IG_DRY_RUN=1     실제 호출 없이 게시 대상만 출력
-  IG_STALE_MIN     (선택) 이 분 수보다 오래 지난 글은 건너뜀. 기본 180
+  IG_STALE_MIN     (선택) 이 분 수보다 오래 지난 글은 건너뜀. 기본 600
 
 사용: python3 -I tools/ig_publish.py [저장소 경로]
 토큰은 절대 출력하지 않는다.
@@ -33,7 +33,7 @@ IG_ID = os.environ.get("IG_USER_ID", "").strip()
 TOKEN = os.environ.get("IG_ACCESS_TOKEN", "").strip()
 VER = os.environ.get("IG_GRAPH_VERSION", "").strip()
 DRY = os.environ.get("IG_DRY_RUN", "") == "1"
-STALE_MIN = int(os.environ.get("IG_STALE_MIN", "180"))
+STALE_MIN = int(os.environ.get("IG_STALE_MIN", "600"))
 BASE = os.environ.get("IG_API_BASE", "https://graph.facebook.com").rstrip("/") + ("/" + VER if VER else "")
 KST = dt.timezone(dt.timedelta(hours=9))
 

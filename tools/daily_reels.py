@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """매일 릴스 자동 제작(GitHub Actions 06:17 KST). 사용: python3 -I tools/daily_reels.py [저장소경로]
-- 일출(대전) 기준 슬롯 +2/+6/+10/+14h, 평일 16:05~17:35 는 17:40, 주말은 3개.
+- 일몰(대전) 기준 슬롯 일몰/일몰+2h(하루 2개), 평일 16:05~17:35 는 17:40.
 - 구성 A/B 날짜 홀짝 교대: A=경제/의사/세제/가입자점검, B=경제/의료인/생명보험/연금, 화·금 4번째=화재보험.
 - 경제 릴스는 Yahoo Finance 종가(공개 조회)로 자동 생성, 조회 실패·휴장이면 다른 소재로 대체.
 - 소재 은행: tools/reel_bank.json (날짜 기반 순환). 결과: social/YYYYMMDD/{post*.mp4,queue.json,log.txt}
@@ -14,22 +14,22 @@ out=os.path.join("/tmp/dry" if os.environ.get("DAILY_DRY") else os.path.join(rep
 if os.path.exists(os.path.join(out,"queue.json")): print("이미 오늘 대기열이 있음 -> 종료"); sys.exit(0)
 bank=json.load(open(os.path.join(here,"reel_bank.json"),encoding="utf8"))
 RAW="https://raw.githubusercontent.com/raonplanner/newsletter-images/main/social/%s/post%d.mp4"
-def sunrise(d,lat=36.35,lon=127.38):
+def sunrise(d,lat=36.35,lon=127.38,sign=-1):
     n=d.toordinal()-dt.date(2000,1,1).toordinal()+0.0008-lon/360
     M=(357.5291+0.98560028*n)%360; C=1.9148*math.sin(math.radians(M))+0.02*math.sin(math.radians(2*M))
     lam=(M+C+180+102.9372)%360; J=2451545+n+0.0053*math.sin(math.radians(M))-0.0069*math.sin(math.radians(2*lam))
     dec=math.asin(math.sin(math.radians(lam))*math.sin(math.radians(23.44)))
     w=math.acos((math.sin(math.radians(-0.833))-math.sin(math.radians(lat))*math.sin(dec))/(math.cos(math.radians(lat))*math.cos(dec)))
-    Jr=J-math.degrees(w)/360  # 율리우스일(UTC)
+    Jr=J+sign*math.degrees(w)/360  # 율리우스일(UTC)
     t=dt.datetime(2000,1,1,12,tzinfo=dt.timezone.utc)+dt.timedelta(days=Jr-2451545)
     return t.astimezone(KST)
-sr=sunrise(today); wd=today.weekday()  # 0=월
-base=sr.replace(second=0,microsecond=0)
+sr=sunrise(today); ss=sunrise(today,sign=1); wd=today.weekday()  # 0=월
+base=ss.replace(second=0,microsecond=0)  # 일몰 기준
 def slot(h):
     t=base+dt.timedelta(hours=h); m=(t.minute+2)//5*5; t=t.replace(minute=0)+dt.timedelta(minutes=m)
     if wd<5 and dt.time(16,5)<=t.time()<=dt.time(17,35): t=t.replace(hour=17,minute=40)
     return t
-slots=[slot(2),slot(6),base.replace(hour=19,minute=40)]  # 하루 3개: 아침·낮·저녁(19:40)
+slots=[slot(0),slot(2)]  # 하루 2개: 일몰, 일몰+2시간
 def yahoo(sym):
     if os.environ.get('YAHOO_MOCK'):  # 시험용
         return [(dt.date.fromisoformat(a),b) for a,b in json.load(open(os.environ['YAHOO_MOCK']))[sym]]
@@ -78,9 +78,9 @@ def topic_reel(it):
 n=today.toordinal(); AB="A" if n%2==0 else "B"; ix=(n//2)%4
 pick=lambda k,off=0: bank[k][((((n-2)//4)*2+n%2)%len(bank[k])) if k=="worker" else ((n//4+off)%len(bank[k]))]
 WK=(n//2)%2==1  # 2번째 슬롯: 의사·의료인 코너와 직장인 직종 코너 번갈아
-plan=[("econ",None),("worker" if WK else ("doctor" if AB=="A" else "medic"),None),(["tax","life","pension","check"][n%4],None)]  # 3번째 슬롯: 세금·생명보험·연금·가입자점검 4일 주기 순환
-if wd in (1,4): plan[2]=("fire",None)
-reels=[]; log=[f"구성: {AB}\n{today} ({'월화수목금토일'[wd]}) 일출 {sr:%H:%M}. GitHub Actions 자동 제작(tools/daily_reels.py)."]
+plan=[(["tax","pension","check","pension"][n%4],None),("worker" if WK else ("doctor" if AB=="A" else "medic"),None)]  # 일몰: 세금·연금·가입자점검 순환(해외경제·생명보험 코너 제외), 일몰+2h: 직종 코너
+if wd in (1,4): plan[0]=("fire",None)
+reels=[]; log=[f"구성: {AB}\n{today} ({'월화수목금토일'[wd]}) 일몰 {ss:%H:%M}. GitHub Actions 자동 제작(tools/daily_reels.py)."]
 fb=False
 for k,_ in plan:
     if k=="econ":

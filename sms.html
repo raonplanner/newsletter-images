@@ -33,8 +33,37 @@ var p = new URLSearchParams(location.hash.slice(1));
 var to = (p.get('to') || '').replace(/[^0-9]/g, '');
 var body = p.get('body') || '';
 var n = parseInt(p.get('img') || '1', 10); if (!(n >= 1 && n <= 6)) n = 1;
+var who = p.get('name') || '';
 var imgUrl = 'bday/b' + n + '.jpg';
-document.getElementById('card').src = imgUrl;
+var cardBlob = null;
+// 기본 카드 위쪽에 받는 분 호칭을 그려 넣는다(휴대폰 안에서만 처리).
+(function () {
+  var im = new Image();
+  im.onload = function () {
+    var c = document.createElement('canvas');
+    c.width = im.width; c.height = im.height;
+    var x = c.getContext('2d');
+    x.drawImage(im, 0, 0);
+    if (who) {
+      var t = who + ',';
+      var size = 40;
+      x.font = 'bold ' + size + 'px "Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+      while (x.measureText(t).width > c.width - 80 && size > 22) {
+        size -= 2;
+        x.font = 'bold ' + size + 'px "Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
+      }
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.shadowColor = 'rgba(0,0,0,0.45)'; x.shadowBlur = 6;
+      x.fillStyle = '#ffffff';
+      x.fillText(t, c.width / 2, 58);
+    }
+    c.toBlob(function (b) {
+      cardBlob = b;
+      document.getElementById('card').src = URL.createObjectURL(b);
+    }, 'image/jpeg', 0.9);
+  };
+  im.src = imgUrl;
+})();
 document.getElementById('msg').textContent = body;
 var ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 var url = 'sms:' + to + (ios ? '&' : '?') + 'body=' + encodeURIComponent(body);
@@ -47,7 +76,7 @@ document.getElementById('copy').onclick = function () { copyText(); this.textCon
 document.getElementById('share').onclick = async function () {
   copyText(); // 일부 문자앱은 공유 시 글을 빼므로 미리 복사해 둔다
   try {
-    var blob = await (await fetch(imgUrl)).blob();
+    var blob = cardBlob || await (await fetch(imgUrl)).blob();
     var file = new File([blob], 'birthday.jpg', { type: 'image/jpeg' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text: body });

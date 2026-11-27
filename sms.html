@@ -6,21 +6,25 @@
 <meta name="robots" content="noindex">
 <title>문자 보내기</title>
 <style>
-body{margin:0;padding:24px 16px;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;word-break:keep-all;background:#f5f7fa;color:#222}
+body{margin:0;padding:20px 14px;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;word-break:keep-all;background:#f5f7fa;color:#222}
 .box{max-width:440px;margin:0 auto;background:#fff;border:1px solid #1f3a5f;border-radius:10px;overflow:hidden}
 .head{background:#1f3a5f;color:#fff;padding:12px 14px;font-weight:bold}
+img{display:block;width:calc(100% - 28px);margin:14px 14px 0;border-radius:6px}
 .msg{margin:14px;padding:12px;background:#f2f4f7;border-radius:6px;line-height:1.6;white-space:pre-wrap}
-a.btn{display:block;margin:0 14px 10px;padding:15px;background:#1f8f4e;color:#fff;text-align:center;border-radius:8px;font-size:18px;font-weight:bold;text-decoration:none}
-button{display:block;width:calc(100% - 28px);margin:0 14px 14px;padding:12px;border:1px solid #1f3a5f;background:#fff;color:#1f3a5f;border-radius:8px;font-size:15px}
-.note{font-size:13px;color:#666;margin:0 14px 14px}
+a.btn,button.btn{display:block;box-sizing:border-box;width:calc(100% - 28px);margin:0 14px 10px;padding:15px;border:0;color:#fff;text-align:center;border-radius:8px;font-size:18px;font-weight:bold;text-decoration:none;font-family:inherit}
+.green{background:#1f8f4e}.blue{background:#2b6cb0}
+button.sub{display:block;width:calc(100% - 28px);margin:0 14px 14px;padding:12px;border:1px solid #1f3a5f;background:#fff;color:#1f3a5f;border-radius:8px;font-size:15px;font-family:inherit}
+.note{font-size:13px;color:#666;margin:0 14px 14px;line-height:1.5}
 </style>
 </head>
 <body>
 <div class="box">
   <div class="head">📱 생일 축하 문자</div>
+  <img id="card" alt="생일 축하 카드">
   <div class="msg" id="msg"></div>
-  <a class="btn" id="go" href="#">문자앱 열기</a>
-  <button id="copy" type="button">문구 복사</button>
+  <a class="btn green" id="go" href="#">💬 글자로 보내기</a>
+  <button class="btn blue" id="share" type="button">🖼️ 이미지로 보내기</button>
+  <button class="sub" id="copy" type="button">문구 복사</button>
   <p class="note" id="note"></p>
 </div>
 <script>
@@ -28,15 +32,30 @@ button{display:block;width:calc(100% - 28px);margin:0 14px 14px;padding:12px;bor
 var p = new URLSearchParams(location.hash.slice(1));
 var to = (p.get('to') || '').replace(/[^0-9]/g, '');
 var body = p.get('body') || '';
+var n = parseInt(p.get('img') || '1', 10); if (!(n >= 1 && n <= 6)) n = 1;
+var imgUrl = 'bday/b' + n + '.jpg';
+document.getElementById('card').src = imgUrl;
 document.getElementById('msg').textContent = body;
 var ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 var url = 'sms:' + to + (ios ? '&' : '?') + 'body=' + encodeURIComponent(body);
 document.getElementById('go').href = url;
-document.getElementById('note').textContent = to ? '' : '받는 사람은 문자앱에서 직접 선택해 주세요.';
-document.getElementById('copy').onclick = function () {
-  try { navigator.clipboard.writeText(body); this.textContent = '복사됨'; } catch (e) {}
+var note = document.getElementById('note');
+note.textContent = (to ? '' : '받는 사람은 문자앱에서 직접 선택해 주세요. ') +
+  '이미지로 보내기 → 공유 창에서 "메시지" 선택 → 받는 사람 선택 → 전송.';
+function copyText() { try { navigator.clipboard.writeText(body); } catch (e) {} }
+document.getElementById('copy').onclick = function () { copyText(); this.textContent = '복사됨'; };
+document.getElementById('share').onclick = async function () {
+  copyText(); // 일부 문자앱은 공유 시 글을 빼므로 미리 복사해 둔다
+  try {
+    var blob = await (await fetch(imgUrl)).blob();
+    var file = new File([blob], 'birthday.jpg', { type: 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text: body });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  note.textContent = '이 브라우저는 이미지 공유가 안 됩니다. 위 카드를 길게 눌러 저장한 뒤 문자에 첨부해 주세요. (문구는 복사되었습니다)';
 };
-if (body) { setTimeout(function () { location.href = url; }, 300); }
 </script>
 </body>
 </html>
